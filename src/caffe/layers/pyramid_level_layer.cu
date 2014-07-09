@@ -166,7 +166,7 @@ Dtype PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
-        height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
+        height_, width_, this->bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
         top_data, mask, top_mask);
     break;
   case PoolingParameter_PoolMethod_AVE:
