@@ -10,8 +10,8 @@
 #include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
 
-using std::max<float>;
-using std::min<float>;
+#define max(a, b) ((a < b) ? b : a)
+#define min(a, b) ((a < b) ? a : b)
 
 namespace caffe {
 
@@ -29,16 +29,7 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   }
   Layer<Dtype>::SetUp(bottom, top);
   PyramidLevelParameter pyramid_level_param = this->layer_param_.pyramid_level_param();
-  // Set the max number of top blobs before calling base Layer::SetUp.
-  // If doing MAX pooling, we can optionally output an extra top Blob
-  // for the mask.  Otherwise, we only have one top Blob.
-  if (this->layer_param_.pyramid_level_param().pool() ==
-      PyramidLevelParameter_PoolMethod_MAX) {
-    max_top_blobs_ = 2;
-  } else {
-    max_top_blobs_ = 1;
-  }
-  CHECK(pyramid_level_param.has_bin_num_h() && pyramid_level_param.has_bin_num_w)
+  CHECK(pyramid_level_param.has_bin_num_h() && pyramid_level_param.has_bin_num_w())
       << "Both bin_num_h and bin_num_w are required";
   bin_num_h_ = pyramid_level_param.bin_num_h();
   bin_num_w_ = pyramid_level_param.bin_num_w();
