@@ -66,6 +66,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new MultinomialLogisticLossLayer<Dtype>(param);
   case LayerParameter_LayerType_POOLING:
     return new PoolingLayer<Dtype>(param);
+  case LayerParameter_LayerType_PYRAMID_LEVEL:
+    return new PyramidLevelLayer<Dtype>(param);
   case LayerParameter_LayerType_POWER:
     return new PowerLayer<Dtype>(param);
   case LayerParameter_LayerType_RELU:
@@ -78,6 +80,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new SoftmaxLayer<Dtype>(param);
   case LayerParameter_LayerType_SOFTMAX_LOSS:
     return new SoftmaxWithLossLayer<Dtype>(param);
+  case LayerParameter_LayerType_SPATIAL_PYRAMID_POOLING:
+    return new SpatialPyramidPoolingLayer<Dtype>(param);
   case LayerParameter_LayerType_SPLIT:
     return new SplitLayer<Dtype>(param);
   case LayerParameter_LayerType_TANH:

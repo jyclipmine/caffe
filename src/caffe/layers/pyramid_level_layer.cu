@@ -360,7 +360,7 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 }
 
 
-INSTANTIATE_CLASS(PoolingLayer);
+INSTANTIATE_CLASS(PyramidLevelLayer);
 
 
 }  // namespace caffe
