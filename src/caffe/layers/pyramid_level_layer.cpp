@@ -59,7 +59,7 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype PyramidLevelLayer<Dtype>::void setROI(int roi_start_h, int roi_start_w,
+void PyramidLevelLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
       int roi_end_h, int roi_end_w) {
   CHECK_GE(roi_start_h, 0) << "roi_start_h must >= 0";
   CHECK_GE(roi_start_w, 0) << "roi_start_w must >= 0";
