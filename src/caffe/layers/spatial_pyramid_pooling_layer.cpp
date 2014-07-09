@@ -57,7 +57,7 @@ void SpatialPyramidPoolingLayer<Dtype>::SetUp(
           new PyramidLevelLayer<Dtype>(layer_param));
       vector<Blob<Dtype>*> pooling_layer_bottom(1, split_top_vec_[i]);
       vector<Blob<Dtype>*> pooling_layer_top(1, new Blob<Dtype>());
-      pooling_layer->SetUp(pooling_layer_bottom, &pooling_layer_top);
+      pyramid_level_layer->SetUp(pooling_layer_bottom, &pooling_layer_top);
       pooling_bottom_vecs_.push_back(pooling_layer_bottom);
       pooling_top_vecs_.push_back(pooling_layer_top);
       pyramid_levels_.push_back(pyramid_level_layer);
