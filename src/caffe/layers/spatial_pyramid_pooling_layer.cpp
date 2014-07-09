@@ -85,17 +85,17 @@ void SpatialPyramidPoolingLayer<Dtype>::SetUp(
   }
   // Set Region of Interest
   int roi_start_h =
-      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_start_h() ?
-      this->layer_param_.spatial_pyramid_pooling_param.roi_start_h() : 0);
+      (this->layer_param_.spatial_pyramid_pooling_param().has_roi_start_h() ?
+      this->layer_param_.spatial_pyramid_pooling_param().roi_start_h() : 0);
   int roi_start_w =
-      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_start_w() ?
-      this->layer_param_.spatial_pyramid_pooling_param.roi_start_w() : 0);
+      (this->layer_param_.spatial_pyramid_pooling_param().has_roi_start_w() ?
+      this->layer_param_.spatial_pyramid_pooling_param().roi_start_w() : 0);
   int roi_end_h =
-      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_end_h() ?
-      this->layer_param_.spatial_pyramid_pooling_param.roi_end_h() : bottom[0]->height());
+      (this->layer_param_.spatial_pyramid_pooling_param().has_roi_end_h() ?
+      this->layer_param_.spatial_pyramid_pooling_param().roi_end_h() : bottom[0]->height());
   int roi_end_w =
-      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_end_w() ?
-      this->layer_param_.spatial_pyramid_pooling_param.roi_end_w() : bottom[0]->width());
+      (this->layer_param_.spatial_pyramid_pooling_param().has_roi_end_w() ?
+      this->layer_param_.spatial_pyramid_pooling_param().roi_end_w() : bottom[0]->width());
   this->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
 }
 
