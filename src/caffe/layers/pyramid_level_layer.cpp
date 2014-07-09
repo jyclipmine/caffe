@@ -38,8 +38,7 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
-  bin_size_h_ = float(height_) / bin_num_h_;
-  bin_size_w_ = float(width_) / bin_num_w_;
+  setROI(0, 0, height_, width_);
   (*top)[0]->Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
   if (top->size() > 1) {
@@ -57,6 +56,21 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     rand_idx_.Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
   }
+}
+
+template <typename Dtype>
+Dtype PyramidLevelLayer<Dtype>::void setROI(int roi_start_h, int roi_start_w,
+      int roi_end_h, int roi_end_w) {
+  CHECK_GE(roi_start_h, 0) << "roi_start_h must >= 0";
+  CHECK_GE(roi_start_w, 0) << "roi_start_w must >= 0";
+  CHECK_LE(roi_end_h, height_) << "roi_end_h must <= height_";
+  CHECK_LE(roi_end_w, width_) << "roi_end_w must <= width_";;
+  roi_start_h_ = roi_start_h;
+  roi_start_w_ = roi_start_w;
+  roi_end_h_ = roi_end_h;
+  roi_end_w_ = roi_end_w;
+  bin_size_h_ = float(roi_end_h_ - roi_start_h_) / bin_num_h_;
+  bin_size_w_ = float(roi_end_w_ - roi_start_w_) / bin_num_w_;
 }
 
 // TODO(Yangqing): Is there a faster way to do PyramidLevel in the channel-first
@@ -89,10 +103,10 @@ Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       for (int c = 0; c < channels_; ++c) {
         for (int ph = 0; ph < bin_num_h_; ++ph) {
           for (int pw = 0; pw < bin_num_w_; ++pw) {
-            int hstart = max(floor(ph * bin_size_h_), 0);
-            int wstart = max(floor(pw * bin_size_w_), 0);
-            int hend = min(ceil((ph + 1) * bin_size_h_), height_);
-            int wend = min(ceil((pw + 1) * bin_size_w_), width_);
+            int hstart = roi_start_h_ + max(floor(ph * bin_size_h_), 0);
+            int wstart = roi_start_w_ + max(floor(pw * bin_size_w_), 0);
+            int hend = min(roi_start_h_ + ceil((ph + 1) * bin_size_h_), roi_end_h_);
+            int wend = min(roi_start_w_ + ceil((pw + 1) * bin_size_w_), roi_end_w_);
             const int pool_index = ph * bin_num_w_ + pw;
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {
@@ -121,33 +135,7 @@ Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
-    for (int i = 0; i < top_count; ++i) {
-      top_data[i] = 0;
-    }
-    // The main loop
-    for (int n = 0; n < bottom[0]->num(); ++n) {
-      for (int c = 0; c < channels_; ++c) {
-        for (int ph = 0; ph < bin_num_h_; ++ph) {
-          for (int pw = 0; pw < bin_num_w_; ++pw) {
-            int hstart = max(floor(ph * bin_size_h_), 0);
-            int wstart = max(floor(pw * bin_size_w_), 0);
-            int hend = min(ceil((ph + 1) * bin_size_h_), height_);
-            int wend = min(ceil((pw + 1) * bin_size_w_), width_);
-            int pool_size = (hend - hstart) * (wend - wstart);
-            for (int h = hstart; h < hend; ++h) {
-              for (int w = wstart; w < wend; ++w) {
-                top_data[ph * bin_num_w_ + pw] +=
-                    bottom_data[h * width_ + w];
-              }
-            }
-            top_data[ph * bin_num_w_ + pw] /= pool_size;
-          }
-        }
-        // compute offset
-        bottom_data += bottom[0]->offset(0, 1);
-        top_data += (*top)[0]->offset(0, 1);
-      }
-    }
+    NOT_IMPLEMENTED;
     break;
   case PyramidLevelParameter_PoolMethod_STOCHASTIC:
     NOT_IMPLEMENTED;
@@ -202,33 +190,7 @@ void PyramidLevelLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     }
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
-    // The main loop
-    for (int n = 0; n < top[0]->num(); ++n) {
-      for (int c = 0; c < channels_; ++c) {
-        for (int ph = 0; ph < bin_num_h_; ++ph) {
-          for (int pw = 0; pw < bin_num_w_; ++pw) {
-            int hstart = max(floor(ph * bin_size_h_), 0);
-            int wstart = max(floor(pw * bin_size_w_), 0);
-            int hend = min(ceil((ph + 1) * bin_size_h_), height_);
-            int wend = min(ceil((pw + 1) * bin_size_w_), width_);
-            int pool_size = (hend - hstart) * (wend - wstart);
-            hstart = max(hstart, 0);
-            wstart = max(wstart, 0);
-            hend = min(hend, height_);
-            wend = min(wend, width_);
-            for (int h = hstart; h < hend; ++h) {
-              for (int w = wstart; w < wend; ++w) {
-                bottom_diff[h * width_ + w] +=
-                  top_diff[ph * bin_num_w_ + pw] / pool_size;
-              }
-            }
-          }
-        }
-        // offset
-        bottom_diff += (*bottom)[0]->offset(0, 1);
-        top_diff += top[0]->offset(0, 1);
-      }
-    }
+    NOT_IMPLEMENTED;
     break;
   case PyramidLevelParameter_PoolMethod_STOCHASTIC:
     NOT_IMPLEMENTED;

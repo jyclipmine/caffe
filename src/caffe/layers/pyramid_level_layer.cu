@@ -15,19 +15,21 @@ namespace caffe {
 
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,
-    const float bin_size_h, const float bin_size_w, Dtype* top_data,
-    int* mask, Dtype* top_mask) {
+    const int num, const int channels,
+    const int roi_start_h, const int roi_start_w,
+    const int roi_end_h, const int roi_end_w, 
+    const int bin_num_h, const int bin_num_w,
+    const float bin_size_h, const float bin_size_w,
+    Dtype* top_data, int* mask, Dtype* top_mask) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     int pw = index % bin_num_w;
     int ph = (index / bin_num_w) % bin_num_h;
     int c = (index / bin_num_w / bin_num_h) % channels;
     int n = index / bin_num_w / bin_num_h / channels;
-    int hstart = max(floor(ph * bin_size_h), 0);
-    int wstart = max(floor(pw * bin_size_w), 0);
-    int hend = min(ceil((ph + 1) * bin_size_h), height);
-    int wend = min(ceil((pw + 1) * bin_size_w), width);
+    int hstart = roi_start_h + max(floor(ph * bin_size_h), 0);
+    int wstart = roi_start_w + max(floor(pw * bin_size_w), 0);
+    int hend = min(roi_start_h + ceil((ph + 1) * bin_size_h), roi_end_h);
+    int wend = min(roi_start_w + ceil((pw + 1) * bin_size_w), roi_end_w);
     Dtype maxval = -FLT_MAX;
     int maxidx = -1;
     bottom_data += (n * channels + c) * height * width;
@@ -47,104 +49,6 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     }
   }
 }
-
-template <typename Dtype>
-__global__ void AvePoolForward(const int nthreads, const Dtype* bottom_data,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,
-    const float bin_size_h, const float bin_size_w, Dtype* top_data) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    int pw = index % bin_num_w;
-    int ph = (index / bin_num_w) % bin_num_h;
-    int c = (index / bin_num_w / bin_num_h) % channels;
-    int n = index / bin_num_w / bin_num_h / channels;
-    int hstart = max(floor(ph * bin_size_h), 0);
-    int wstart = max(floor(pw * bin_size_w), 0);
-    int hend = min(ceil((ph + 1) * bin_size_h), height);
-    int wend = min(ceil((pw + 1) * bin_size_w), width);
-    int pool_size = (hend - hstart) * (wend - wstart);
-    Dtype aveval = 0;
-    bottom_data += (n * channels + c) * height * width;
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        aveval += bottom_data[h * width + w];
-      }
-    }
-    top_data[index] = aveval / pool_size;
-  }
-}
-
-template <typename Dtype>
-__global__ void StoPoolForwardTrain(const int nthreads,
-    const Dtype* bottom_data,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w, 
-    const float bin_size_h, const float bin_size_w,
-    Dtype* rand_idx, Dtype* top_data) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    int pw = index % bin_num_w;
-    int ph = (index / bin_num_w) % bin_num_h;
-    int c = (index / bin_num_w / bin_num_h) % channels;
-    int n = index / bin_num_w / bin_num_h / channels;
-    int hstart = max(floor(ph * bin_size_h), 0);
-    int wstart = max(floor(pw * bin_size_w), 0);
-    int hend = min(ceil((ph + 1) * bin_size_h), height);
-    int wend = min(ceil((pw + 1) * bin_size_w), width);
-    Dtype cumsum = 0.;
-    bottom_data += (n * channels + c) * height * width;
-    // First pass: get sum
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
-      }
-    }
-    float thres = rand_idx[index] * cumsum;
-    // Second pass: get value, and set index.
-    cumsum = 0;
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
-        if (cumsum >= thres) {
-          rand_idx[index] = ((n * channels + c) * height + h) * width + w;
-          top_data[index] = bottom_data[h * width + w];
-          return;
-        }
-      }
-    }
-  }
-}
-
-
-template <typename Dtype>
-__global__ void StoPoolForwardTest(const int nthreads,
-    const Dtype* bottom_data,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,
-    const float bin_size_h, const float bin_size_w, Dtype* top_data) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    int pw = index % bin_num_w;
-    int ph = (index / bin_num_w) % bin_num_h;
-    int c = (index / bin_num_w / bin_num_h) % channels;
-    int n = index / bin_num_w / bin_num_h / channels;
-    int hstart = max(floor(ph * bin_size_h), 0);
-    int wstart = max(floor(pw * bin_size_w), 0);
-    int hend = min(ceil((ph + 1) * bin_size_h), height);
-    int wend = min(ceil((pw + 1) * bin_size_w), width);
-    // We set cumsum to be 0 to avoid divide-by-zero problems
-    Dtype cumsum = FLT_MIN;
-    Dtype cumvalues = 0.;
-    bottom_data += (n * channels + c) * height * width;
-    // First pass: get sum
-    for (int h = hstart; h < hend; ++h) {
-      for (int w = wstart; w < wend; ++w) {
-        cumsum += bottom_data[h * width + w];
-        cumvalues += bottom_data[h * width + w] * bottom_data[h * width + w];
-      }
-    }
-    top_data[index] = cumvalues / cumsum;
-  }
-}
-
 
 template <typename Dtype>
 Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
@@ -170,31 +74,10 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         top_data, mask, top_mask);
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, bottom_data, bottom[0]->num(), channels_,
-        height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
-        top_data);
+    NOT_IMPLEMENTED;
     break;
   case PyramidLevelParameter_PoolMethod_STOCHASTIC:
-    if (Caffe::phase() == Caffe::TRAIN) {
-      // We need to create the random index as well.
-      caffe_gpu_rng_uniform(count, Dtype(0), Dtype(1),
-                            rand_idx_.mutable_gpu_data());
-      // NOLINT_NEXT_LINE(whitespace/operators)
-      StoPoolForwardTrain<Dtype><<<CAFFE_GET_BLOCKS(count),
-                                   CAFFE_CUDA_NUM_THREADS>>>(
-          count, bottom_data, bottom[0]->num(), channels_,
-          height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
-          rand_idx_.mutable_gpu_data(), top_data);
-    } else {
-      // NOLINT_NEXT_LINE(whitespace/operators)
-      StoPoolForwardTest<Dtype><<<CAFFE_GET_BLOCKS(count),
-                                  CAFFE_CUDA_NUM_THREADS>>>(
-          count, bottom_data, bottom[0]->num(), channels_,
-          height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
-          top_data);
-    }
+    NOT_IMPLEMENTED;
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
@@ -207,8 +90,10 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     const int* mask, const Dtype* top_mask, const int num, const int channels,
-    const int height, const int width, const int bin_num_h,
-    const int bin_num_w, const float bin_size_h, const float bin_size_w,
+    const int roi_start_h, const int roi_start_w,
+    const int roi_end_h, const int roi_end_w, 
+    const int bin_num_h, const int bin_num_w,
+    const float bin_size_h, const float bin_size_w,
     Dtype* bottom_diff) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     // find out the local index
@@ -217,10 +102,10 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     int h = (index / width) % height;
     int c = (index / width / height) % channels;
     int n = index / width / height / channels;
-    int phstart = max(floor(h / bin_size_h - 1), 0);
-    int phend = min(ceil((h + 1) / bin_size_h), bin_num_h);
-    int pwstart = max(floor(w / bin_size_w - 1), 0);
-    int pwend = min(ceil((w + 1) / bin_size_w), bin_num_w);
+    int phstart = max(floor((h - roi_start_h) / bin_size_h - 1), 0);
+    int phend = min(ceil((h - roi_start_h + 1) / bin_size_h), bin_num_h);
+    int pwstart = max(floor((w - roi_start_w) / bin_size_w - 1), 0);
+    int pwend = min(ceil((w - roi_start_w + 1) / bin_size_w), bin_num_w);
     Dtype gradient = 0;
     int offset = (n * channels + c) * bin_num_h * bin_num_w;
     top_diff += offset;
@@ -246,71 +131,6 @@ __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     bottom_diff[index] = gradient;
   }
 }
-
-template <typename Dtype>
-__global__ void AvePoolBackward(const int nthreads, const Dtype* top_diff,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,
-    const float bin_size_h, const float bin_size_w, Dtype* bottom_diff) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    // find out the local index
-    // find out the local offset
-    int w = index % width;
-    int h = (index / width) % height;
-    int c = (index / width / height) % channels;
-    int n = index / width / height / channels;
-    int phstart = max(floor(h / bin_size_h - 1), 0);
-    int phend = min(ceil((h + 1) / bin_size_h), bin_num_h);
-    int pwstart = max(floor(w / bin_size_w - 1), 0);
-    int pwend = min(ceil((w + 1) / bin_size_w), bin_num_w);
-    Dtype gradient = 0;
-    top_diff += (n * channels + c) * bin_num_h * bin_num_w;
-    for (int ph = phstart; ph < phend; ++ph) {
-      for (int pw = pwstart; pw < pwend; ++pw) {
-        // figure out the pooling size
-        int hstart = max(floor(ph * bin_size_h), 0);
-        int wstart = max(floor(pw * bin_size_w), 0);
-        int hend = min(ceil((ph + 1) * bin_size_h), height);
-        int wend = min(ceil((pw + 1) * bin_size_w), width);
-        int pool_size = (hend - hstart) * (wend - wstart);
-        gradient += top_diff[ph * bin_num_w + pw] / pool_size;
-      }
-    }
-    bottom_diff[index] = gradient;
-  }
-}
-
-
-template <typename Dtype>
-__global__ void StoPoolBackward(const int nthreads,
-    const Dtype* rand_idx, const Dtype* top_diff,
-    const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,
-    const float bin_size_h, const float bin_size_w, Dtype* bottom_diff) {
-  CUDA_KERNEL_LOOP(index, nthreads) {
-    // find out the local index
-    // find out the local offset
-    int w = index % width;
-    int h = (index / width) % height;
-    int c = (index / width / height) % channels;
-    int n = index / width / height / channels;
-    int phstart = max(floor(h / bin_size_h - 1), 0);
-    int phend = min(ceil((h + 1) / bin_size_h), bin_num_h);
-    int pwstart = max(floor(w / bin_size_w - 1), 0);
-    int pwend = min(ceil((w + 1) / bin_size_w), bin_num_w);
-    Dtype gradient = 0;
-    rand_idx += (n * channels + c) * bin_num_h * bin_num_w;
-    top_diff += (n * channels + c) * bin_num_h * bin_num_w;
-    for (int ph = phstart; ph < phend; ++ph) {
-      for (int pw = pwstart; pw < pwend; ++pw) {
-        gradient += top_diff[ph * bin_num_w + pw] *
-            (index == static_cast<int>(rand_idx[ph * bin_num_w + pw]));
-      }
-    }
-    bottom_diff[index] = gradient;
-  }
-}
-
 
 template <typename Dtype>
 void PyramidLevelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
@@ -340,18 +160,10 @@ void PyramidLevelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         bin_size_h_, bin_size_w_, bottom_diff);
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, top_diff, top[0]->num(), channels_,
-        height_, width_, bin_num_h_, bin_num_w_,
-        bin_size_h_, bin_size_w_, bottom_diff);
+    NOT_IMPLEMENTED;
     break;
   case PyramidLevelParameter_PoolMethod_STOCHASTIC:
-    // NOLINT_NEXT_LINE(whitespace/operators)
-    StoPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
-        count, rand_idx_.gpu_data(), top_diff,
-        top[0]->num(), channels_, height_, width_, bin_num_h_,
-        bin_num_w_, bin_size_h_, bin_size_w_, bottom_diff);
+    NOT_IMPLEMENTED;
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";

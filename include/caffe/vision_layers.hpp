@@ -292,6 +292,7 @@ class PyramidLevelLayer : public Layer<Dtype> {
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int MinTopBlobs() const { return 1; }
   virtual inline int MaxTopBlobs() const { return max_top_blobs_; }
+  void setROI(int roi_start_h, int roi_start_w, int roi_end_h, int roi_end_w);
 
  protected:
   virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -311,6 +312,10 @@ class PyramidLevelLayer : public Layer<Dtype> {
   int channels_;
   int height_;
   int width_;
+  int roi_start_h_;
+  int roi_start_w_;
+  int roi_end_h_;
+  int roi_end_w_;
   Blob<Dtype> rand_idx_;
   shared_ptr<Blob<int> > max_idx_;
 };
