@@ -78,7 +78,7 @@ template <typename Dtype>
 __global__ void StoPoolForwardTrain(const int nthreads,
     const Dtype* bottom_data,
     const int num, const int channels, const int height,
-    const int width, const int bin_num_h, const int bin_num_w,a
+    const int width, const int bin_num_h, const int bin_num_w, 
     const float bin_size_h, const float bin_size_w,
     Dtype* rand_idx, Dtype* top_data) {
   CUDA_KERNEL_LOOP(index, nthreads) {
