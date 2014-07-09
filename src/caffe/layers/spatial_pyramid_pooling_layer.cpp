@@ -106,7 +106,7 @@ void SpatialPyramidPoolingLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
   for (int i = 0; i < pyramid_levels_.size(); ++i) {
     pyramid_levels_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
   }
-)
+}
 
 template <typename Dtype>
 Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
