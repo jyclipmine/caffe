@@ -147,7 +147,7 @@ __global__ void StoPoolForwardTest(const int nthreads,
 
 
 template <typename Dtype>
-Dtype PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = (*top)[0]->mutable_gpu_data();
@@ -156,8 +156,8 @@ Dtype PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   const bool use_top_mask = top->size() > 1;
   int* mask = NULL;
   Dtype* top_mask = NULL;
-  switch (this->layer_param_.pooling_param().pool()) {
-  case PoolingParameter_PoolMethod_MAX:
+  switch (this->layer_param_.pyramid_level_param().pool()) {
+  case PyramidLevelParameter_PoolMethod_MAX:
     if (use_top_mask) {
       top_mask = (*top)[1]->mutable_gpu_data();
     } else {
@@ -166,17 +166,17 @@ Dtype PoolingLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
-        height_, width_, this->bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
+        height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
         top_data, mask, top_mask);
     break;
-  case PoolingParameter_PoolMethod_AVE:
+  case PyramidLevelParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     AvePoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
         height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
         top_data);
     break;
-  case PoolingParameter_PoolMethod_STOCHASTIC:
+  case PyramidLevelParameter_PoolMethod_STOCHASTIC:
     if (Caffe::phase() == Caffe::TRAIN) {
       // We need to create the random index as well.
       caffe_gpu_rng_uniform(count, Dtype(0), Dtype(1),
@@ -313,7 +313,7 @@ __global__ void StoPoolBackward(const int nthreads,
 
 
 template <typename Dtype>
-void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+void PyramidLevelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
   if (!propagate_down[0]) {
     return;
@@ -326,8 +326,8 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;
   const Dtype* top_mask = NULL;
-  switch (this->layer_param_.pooling_param().pool()) {
-  case PoolingParameter_PoolMethod_MAX:
+  switch (this->layer_param_.pyramid_level_param().pool()) {
+  case PyramidLevelParameter_PoolMethod_MAX:
     if (use_top_mask) {
       top_mask = top[1]->gpu_data();
     } else {
@@ -339,14 +339,14 @@ void PoolingLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
         height_, width_, bin_num_h_, bin_num_w_,
         bin_size_h_, bin_size_w_, bottom_diff);
     break;
-  case PoolingParameter_PoolMethod_AVE:
+  case PyramidLevelParameter_PoolMethod_AVE:
     // NOLINT_NEXT_LINE(whitespace/operators)
     AvePoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, top[0]->num(), channels_,
         height_, width_, bin_num_h_, bin_num_w_,
         bin_size_h_, bin_size_w_, bottom_diff);
     break;
-  case PoolingParameter_PoolMethod_STOCHASTIC:
+  case PyramidLevelParameter_PoolMethod_STOCHASTIC:
     // NOLINT_NEXT_LINE(whitespace/operators)
     StoPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, rand_idx_.gpu_data(), top_diff,
