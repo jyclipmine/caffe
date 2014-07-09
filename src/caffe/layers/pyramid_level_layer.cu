@@ -16,6 +16,7 @@ namespace caffe {
 template <typename Dtype>
 __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     const int num, const int channels,
+    const int height, const int width,
     const int roi_start_h, const int roi_start_w,
     const int roi_end_h, const int roi_end_w, 
     const int bin_num_h, const int bin_num_w,
@@ -32,7 +33,7 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
     int wend = min(roi_start_w + ceil((pw + 1) * bin_size_w), roi_end_w);
     Dtype maxval = -FLT_MAX;
     int maxidx = -1;
-    bottom_data += (n * channels + c) * height * width;
+    bottom_data += (n * channels + c) * width * height;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
         if (bottom_data[h * width + w] > maxval) {
@@ -70,7 +71,7 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
-        roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
+        height_, width_, roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
         bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
         top_data, mask, top_mask);
     break;
@@ -91,6 +92,7 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 __global__ void MaxPoolBackward(const int nthreads, const Dtype* top_diff,
     const int* mask, const Dtype* top_mask, const int num, const int channels,
+    const int height, const int width,
     const int roi_start_h, const int roi_start_w,
     const int roi_end_h, const int roi_end_w, 
     const int bin_num_h, const int bin_num_w,
@@ -157,7 +159,7 @@ void PyramidLevelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, mask, top_mask, top[0]->num(), channels_,
-        roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
+        height_, width_, roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
         bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_, bottom_diff);
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
