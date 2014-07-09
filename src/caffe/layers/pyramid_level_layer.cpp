@@ -10,8 +10,8 @@
 #include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
 
-using std::max;
-using std::min;
+using std::max<float>;
+using std::min<float>;
 
 namespace caffe {
 
@@ -32,8 +32,8 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   // Set the max number of top blobs before calling base Layer::SetUp.
   // If doing MAX pooling, we can optionally output an extra top Blob
   // for the mask.  Otherwise, we only have one top Blob.
-  if (this->layer_param_.pooling_param().pool() ==
-      PoolingParameter_PoolMethod_MAX) {
+  if (this->layer_param_.pyramid_level_param().pool() ==
+      PyramidLevelParameter_PoolMethod_MAX) {
     max_top_blobs_ = 2;
   } else {
     max_top_blobs_ = 1;
@@ -47,8 +47,8 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
-  bin_size_h_ = float(height) / bin_num_h_;
-  bin_size_w_ = float(width) / bin_num_w_;
+  bin_size_h_ = float(height_) / bin_num_h_;
+  bin_size_w_ = float(width_) / bin_num_w_;
   (*top)[0]->Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
   if (top->size() > 1) {
