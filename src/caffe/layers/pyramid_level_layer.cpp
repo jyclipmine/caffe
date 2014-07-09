@@ -21,7 +21,7 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   // Set the max number of top blobs before calling base Layer::SetUp.
   // If doing MAX PyramidLevel, we can optionally output an extra top Blob
   // for the mask.  Otherwise, we only have one top Blob.
-  if (this->layer_param_.PyramidLevel_param().pool() ==
+  if (this->layer_param_.pyramid_level_param().pool() ==
       PyramidLevelParameter_PoolMethod_MAX) {
     max_top_blobs_ = 2;
   } else {
@@ -46,13 +46,13 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     (*top)[1]->ReshapeLike(*(*top)[0]);
   }
   // If max PyramidLevel, we will initialize the vector index part.
-  if (this->layer_param_.PyramidLevel_param().pool() ==
+  if (this->layer_param_.pyramid_level_param().pool() ==
       PyramidLevelParameter_PoolMethod_MAX && top->size() == 1) {
     max_idx_.reset(new Blob<int>(bottom[0]->num(), channels_,
                                  bin_num_h_, bin_num_w_));
   }
   // If stochastic PyramidLevel, we will initialize the random index part.
-  if (this->layer_param_.PyramidLevel_param().pool() ==
+  if (this->layer_param_.pyramid_level_param().pool() ==
       PyramidLevelParameter_PoolMethod_STOCHASTIC) {
     rand_idx_.Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
@@ -73,7 +73,7 @@ Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* top_mask = NULL;
   // Different PyramidLevel methods. We explicitly do the switch outside the for
   // loop to save time, although this results in more code.
-  switch (this->layer_param_.PyramidLevel_param().pool()) {
+  switch (this->layer_param_.pyramid_level_param().pool()) {
   case PyramidLevelParameter_PoolMethod_MAX:
     // Initialize
     if (use_top_mask) {
@@ -173,7 +173,7 @@ void PyramidLevelLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   const bool use_top_mask = top.size() > 1;
   const int* mask = NULL;  // suppress warnings about uninitialized variables
   const Dtype* top_mask = NULL;
-  switch (this->layer_param_.PyramidLevel_param().pool()) {
+  switch (this->layer_param_.pyramid_level_param().pool()) {
   case PyramidLevelParameter_PoolMethod_MAX:
     // The main loop
     if (use_top_mask) {
