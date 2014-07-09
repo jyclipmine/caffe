@@ -432,6 +432,10 @@ message PyramidLevelParameter {
   optional PoolMethod pool = 1 [default = MAX]; // The pooling method
   optional uint32 bin_num_h = 2; // number of spatial bins along height axis
   optional uint32 bin_num_w = 3; // number of spatial bins along width axis
+  optional uint32 roi_start_h = 4;
+  optional uint32 roi_start_w = 5;
+  optional uint32 roi_end_h = 6;
+  optional uint32 roi_end_w = 7;
 }
 
 // Message that stores parameters used by SpatialPyramidPoolingLayer
@@ -444,6 +448,10 @@ message SpatialPyramidPoolingParameter {
   optional PoolMethod pool = 1 [default = MAX]; // The pooling method
   // The number of spatial bins of each pyramid level
   repeated uint32 spatial_bin = 2;
+  optional uint32 roi_start_h = 3;
+  optional uint32 roi_start_w = 4;
+  optional uint32 roi_end_h = 5;
+  optional uint32 roi_end_w = 6;
 }
 
 // Message that stores parameters used by PowerLayer

@@ -335,6 +335,7 @@ class SpatialPyramidPoolingLayer : public Layer<Dtype> {
   }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
+  void setROI(int roi_start_h, int roi_start_w, int roi_end_h, int roi_end_w);
 
  protected:
   virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,

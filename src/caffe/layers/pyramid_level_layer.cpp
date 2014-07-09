@@ -38,7 +38,6 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   channels_ = bottom[0]->channels();
   height_ = bottom[0]->height();
   width_ = bottom[0]->width();
-  setROI(0, 0, height_, width_);
   (*top)[0]->Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
   if (top->size() > 1) {
@@ -56,6 +55,16 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     rand_idx_.Reshape(bottom[0]->num(), channels_, bin_num_h_,
       bin_num_w_);
   }
+  // Set Region of Interest
+  int roi_start_h = (pyramid_level_param.has_roi_start_h() ?
+      pyramid_level_param.roi_start_h() : 0);
+  int roi_start_w = (pyramid_level_param.has_roi_start_w() ?
+      pyramid_level_param.roi_start_w() : 0);
+  int roi_end_h = (pyramid_level_param.has_roi_end_h() ?
+      pyramid_level_param.roi_end_h() : height_);
+  int roi_end_w = (pyramid_level_param.has_roi_end_w() ?
+      pyramid_level_param.roi_end_w() : width_);
+  this->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
 }
 
 template <typename Dtype>
@@ -65,6 +74,8 @@ void PyramidLevelLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
   CHECK_GE(roi_start_w, 0) << "roi_start_w must >= 0";
   CHECK_LE(roi_end_h, height_) << "roi_end_h must <= height_";
   CHECK_LE(roi_end_w, width_) << "roi_end_w must <= width_";;
+  CHECK_GT(roi_end_h, roi_start_h) << "roi_end_h must > roi_start_h";
+  CHECK_GT(roi_end_w, roi_start_w) << "roi_end_w must > roi_start_w";
   roi_start_h_ = roi_start_h;
   roi_start_w_ = roi_start_w;
   roi_end_h_ = roi_end_h;

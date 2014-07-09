@@ -83,7 +83,30 @@ void SpatialPyramidPoolingLayer<Dtype>::SetUp(
     layer->SetUp(bottom, top);
     pyramid_levels_.push_back(layer);
   }
+  // Set Region of Interest
+  int roi_start_h =
+      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_start_h() ?
+      this->layer_param_.spatial_pyramid_pooling_param.roi_start_h() : 0);
+  int roi_start_w =
+      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_start_w() ?
+      this->layer_param_.spatial_pyramid_pooling_param.roi_start_w() : 0);
+  int roi_end_h =
+      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_end_h() ?
+      this->layer_param_.spatial_pyramid_pooling_param.roi_end_h() : bottom[0]->height());
+  int roi_end_w =
+      (this->layer_param_.spatial_pyramid_pooling_param.has_roi_end_w() ?
+      this->layer_param_.spatial_pyramid_pooling_param.roi_end_w() : bottom[0]->width());
+  this->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
 }
+
+template <typename Dtype>
+void SpatialPyramidPoolingLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
+      int roi_end_h, int roi_end_w) {
+  // No checks here. All checks are in PyramidLevelLayer::setROI
+  for (int i = 0; i < pyramid_levels_.size(); ++i) {
+    pyramid_levels_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
+  }
+)
 
 template <typename Dtype>
 Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
@@ -92,9 +115,10 @@ Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
   if (num_pyramid_levels_ > 1) {
     split_layer_->Forward(bottom, &split_top_vec_);
     for (int i = 0; i < num_pyramid_levels_; ++i) {
-      loss += pyramid_levels_[i]->Forward(pooling_bottom_vecs_[i], &(pooling_top_vecs_[i]));
+      loss += pyramid_levels_[i]->Forward(pooling_bottom_vecs_[i],
+          &(pooling_top_vecs_[i]));
       loss += flatten_layers_[i]->Forward(pooling_top_vecs_[i],
-                                          &(flatten_top_vecs_[i]));
+          &(flatten_top_vecs_[i]));
     }
     loss += concat_layer_->Forward(concat_bottom_vec_, top);
   } else {
