@@ -8,8 +8,8 @@
 #include "caffe/vision_layers.hpp"
 #include "caffe/util/math_functions.hpp"
 
-using std::max;
-using std::min;
+#define max(a, b) ((a < b) ? b : a)
+#define min(a, b) ((a < b) ? a : b)
 
 namespace caffe {
 
