@@ -70,7 +70,8 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolForward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, bottom_data, bottom[0]->num(), channels_,
-        height_, width_, bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
+        roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
+        bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_,
         top_data, mask, top_mask);
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
@@ -156,8 +157,8 @@ void PyramidLevelLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     // NOLINT_NEXT_LINE(whitespace/operators)
     MaxPoolBackward<Dtype><<<CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS>>>(
         count, top_diff, mask, top_mask, top[0]->num(), channels_,
-        height_, width_, bin_num_h_, bin_num_w_,
-        bin_size_h_, bin_size_w_, bottom_diff);
+        roi_start_h_, roi_start_w_, roi_end_h_, roi_end_w_,
+        bin_num_h_, bin_num_w_, bin_size_h_, bin_size_w_, bottom_diff);
     break;
   case PyramidLevelParameter_PoolMethod_AVE:
     NOT_IMPLEMENTED;
