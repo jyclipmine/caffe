@@ -82,6 +82,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new SoftmaxWithLossLayer<Dtype>(param);
   case LayerParameter_LayerType_SPATIAL_PYRAMID_POOLING:
     return new SpatialPyramidPoolingLayer<Dtype>(param);
+  case LayerParameter_LayerType_SPP_DETECTOR:
+    return new SPPDetectorLayer<Dtype>(param);
   case LayerParameter_LayerType_SPLIT:
     return new SplitLayer<Dtype>(param);
   case LayerParameter_LayerType_TANH:

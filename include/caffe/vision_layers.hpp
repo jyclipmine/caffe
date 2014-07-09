@@ -331,7 +331,7 @@ class SpatialPyramidPoolingLayer : public Layer<Dtype> {
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
-    return LayerParameter_LayerType_POOLING;
+    return LayerParameter_LayerType_SPATIAL_PYRAMID_POOLING;
   }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
@@ -362,6 +362,34 @@ class SpatialPyramidPoolingLayer : public Layer<Dtype> {
   vector<Blob<Dtype>*> concat_bottom_vec_;
 };
 
+/* SPPDetectorLayer
+*/
+template <typename Dtype>
+class SPPDetectorLayer : public Layer<Dtype>
+ public:
+  explicit SPPDetectorLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_SPP_DETECTOR;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {}
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {}
+
+  int proposal_num_;
+  shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer_;
 }  // namespace caffe
 
 #endif  // CAFFE_VISION_LAYERS_HPP_
