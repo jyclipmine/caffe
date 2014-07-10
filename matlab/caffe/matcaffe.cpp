@@ -12,6 +12,21 @@
 
 #define MEX_ARGS int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <iostream>
+
 using namespace caffe;  // NOLINT(build/namespaces)
 
 // The pointer to the internal caffe::Net instance
