@@ -18,8 +18,10 @@ namespace caffe {
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
+  std::cout << "prepare to forward GPU\n";
   const Dtype* window_proposals = bottom[0]->gpu_data();
   for (int i = 0; i < proposal_num_; i++) {
+    std::cout << "forwarding no. " << i << "\n";
     // Set ROI
     // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     int roi_start_h = window_proposals[4*i];
