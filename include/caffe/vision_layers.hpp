@@ -384,12 +384,19 @@ class SPPDetectorLayer : public Layer<Dtype>
   virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {}
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
+    LOG(FATAL) << "Backward not supported for detector";
+  }
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {}
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
+    LOG(FATAL) << "Backward not supported for detector";
+  }
 
   int proposal_num_;
-  shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer_;
+  int dim_;
+  vector<shared_ptr<SpatialPyramidPoolingLayer<Dtype> > > spp_layers_;
+  vector<vector<Blob<Dtype>*> > spp_bottom_vecs_;
+  vector<vector<Blob<Dtype>*> > spp_top_vecs_;
 }  // namespace caffe
 
 #endif  // CAFFE_VISION_LAYERS_HPP_
