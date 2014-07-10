@@ -64,7 +64,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
     int roi_end_w = window_proposals[4*i+3];
-    LOG(INFO) << "Region: " << roi_start_h << ", " << roi_start_w << ", " roi_end_h << ", " << roi_end_w;
+    LOG(INFO) << "Region: " << roi_start_h << ", " << roi_start_w << ", " << roi_end_h << ", " << roi_end_w;
     spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
     spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
