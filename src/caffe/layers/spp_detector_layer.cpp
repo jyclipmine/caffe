@@ -55,7 +55,7 @@ template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   std::cout << "prepare to forward CPU\n";
-  const Dtype* window_proposals = bottom[0]->cpu_data();
+  const Dtype* window_proposals = bottom[1]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
     LOG(INFO) << "forwarding no. " << i;
     // Set ROI
