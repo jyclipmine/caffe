@@ -32,7 +32,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   LayerParameter layer_param;
   SpatialPyramidPoolingParameter* spatial_pyramid_pooling_param
       = layer_param.spatial_pyramid_pooling_param();
-  *spatial_pyramid_pooling_param = layer_param_.spatial_pyramid_pooling_param();
+  *spatial_pyramid_pooling_param = this->layer_param_.spatial_pyramid_pooling_param();
   for (int i = 0; i < proposal_num_; i++) {
     vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
     vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
@@ -52,7 +52,7 @@ template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
 
-  const Blob<Dtype>* window_proposals = bottom[0];
+  const Blob<Dtype>* window_proposals = bottom[0]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
     // Set ROI
     // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
