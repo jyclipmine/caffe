@@ -397,6 +397,8 @@ class SPPDetectorLayer : public Layer<Dtype> {
   vector<shared_ptr<SpatialPyramidPoolingLayer<Dtype> > > spp_layers_;
   vector<vector<Blob<Dtype>*> > spp_bottom_vecs_;
   vector<vector<Blob<Dtype>*> > spp_top_vecs_;
+};
+
 }  // namespace caffe
 
 #endif  // CAFFE_VISION_LAYERS_HPP_
