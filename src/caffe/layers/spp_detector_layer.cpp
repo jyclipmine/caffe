@@ -46,6 +46,8 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     spp_layers_.push_back(spp_layer);
   }
   dim_ = spp_top_vecs_[0][0]->count();
+  std::cout << "The proposal num is " << proposal_num_ << std::endl;
+  std::cout << "The dim is " << dim_ << std::endl;
   (*top)[0]->Reshape(1, 1, proposal_num_, dim_);
 }
 
