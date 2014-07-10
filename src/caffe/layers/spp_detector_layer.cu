@@ -11,6 +11,13 @@
 #include "caffe/util/io.hpp"
 #include "caffe/vision_layers.hpp"
 
+
+
+
+
+
+#include <iostream>
+
 using std::string;
 
 namespace caffe {
