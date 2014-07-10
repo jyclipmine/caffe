@@ -20,7 +20,7 @@ namespace caffe {
 
 template <typename Dtype>
 void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top)
+      vector<Blob<Dtype>*>* top) {
   Layer<Dtype>::SetUp(bottom, top);
   CHECK_EQ(bottom[1]->width(), 4) << "proposal dimension must be 1*1*n*4";
   CHECK_GE(bottom[1]->height(), 0) << "proposal dimension must be 1*1*n*4";
