@@ -18,13 +18,20 @@ namespace caffe {
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  if (bottom[0]->gpu_data() != (*top)[0]->gpu_data()) {
-    caffe_copy(bottom[0]->count(), bottom[0]->gpu_data(),
-             (*top)[0]->mutable_gpu_data());
-  }
-  if (bottom[1]->gpu_data() != (*top)[1]->gpu_data()) {
-    caffe_copy(bottom[1]->count(), bottom[1]->gpu_data(),
-             (*top)[1]->mutable_gpu_data());
+  const Blob<Dtype>* window_proposals = bottom[0];
+  for (int i = 0; i < proposal_num_; i++) {
+    // Set ROI
+    // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
+    int roi_start_h = window_proposals[4*i];
+    int roi_start_w = window_proposals[4*i+1];
+    int roi_end_h = window_proposals[4*i+2];
+    int roi_end_w = window_proposals[4*i+3];
+    spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
+    // Forward
+    spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
+    // Copy the data
+    caffe_copy(spp_top_vecs_[i][0]->count(), spp_top_vecs_[i][0]->gpu_data(),
+        (*top)[0]->mutable_gpu_data() + dim_ * i);
   }
   return Dtype(0.);
 }
