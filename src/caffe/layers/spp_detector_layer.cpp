@@ -44,7 +44,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     spp_top_vecs_.push_back(spp_top);
     spp_layers_.push_back(spp_layer);
   }
-  dim_ = spp_bottom_vecs_[0][0]->count();
+  dim_ = spp_top_vecs_[0][0]->count();
   (*top)[0]->Reshape(1, 1, proposal_num_, dim_);
 }
 
@@ -64,7 +64,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Forward
     spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
     // Copy the data
-    caffe_copy(spp_top_vecs_[i][0]->count(), spp_top_vecs_[i][0]->cpu_data(),
+    caffe_copy(dim_, spp_top_vecs_[i][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + dim_ * i);
   }
   return Dtype(0.);

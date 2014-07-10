@@ -365,7 +365,7 @@ class SpatialPyramidPoolingLayer : public Layer<Dtype> {
 /* SPPDetectorLayer
 */
 template <typename Dtype>
-class SPPDetectorLayer : public Layer<Dtype>
+class SPPDetectorLayer : public Layer<Dtype> {
  public:
   explicit SPPDetectorLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
