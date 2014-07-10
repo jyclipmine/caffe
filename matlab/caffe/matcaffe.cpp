@@ -66,8 +66,8 @@ static mxArray* do_forward(const mxArray* const bottom) {
     }  // switch (Caffe::mode())
   }
   
-  
-  LOG(ERROR) << "Prepared to forward: " << input_blobs[i]->count();
+  LOG(ERROR) << "Prepared to forward: " << input_blobs[0]->count();
+  LOG(ERROR) << "Prepared to forward: " << input_blobs[1]->count();
   
   const vector<Blob<float>*>& output_blobs = net_->ForwardPrefilled();
   mxArray* mx_out = mxCreateCellMatrix(output_blobs.size(), 1);
