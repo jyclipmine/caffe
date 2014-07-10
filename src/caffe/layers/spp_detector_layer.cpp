@@ -36,7 +36,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   for (int i = 0; i < proposal_num_; i++) {
     vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
     vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
-    spp_bottom[0]->ShareData(bottom[0]);
+    spp_bottom[0]->ShareData(*(bottom[0]));
     shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
         new SpatialPyramidPoolingLayer<Dtype>(layer_param));
     spp_layer->SetUp(spp_bottom, &spp_top);
