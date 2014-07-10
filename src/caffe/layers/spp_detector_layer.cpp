@@ -31,7 +31,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   // Set up inner layers
   LayerParameter layer_param;
   SpatialPyramidPoolingParameter* spatial_pyramid_pooling_param
-      = layer_param.spatial_pyramid_pooling_param();
+      = layer_param.mutable_spatial_pyramid_pooling_param();
   *spatial_pyramid_pooling_param = this->layer_param_.spatial_pyramid_pooling_param();
   for (int i = 0; i < proposal_num_; i++) {
     vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
