@@ -11,13 +11,6 @@
 #include "caffe/util/io.hpp"
 #include "caffe/vision_layers.hpp"
 
-
-
-
-
-
-#include <iostream>
-
 using std::string;
 
 namespace caffe {
@@ -25,16 +18,17 @@ namespace caffe {
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  std::cout << "prepare to forward GPU\n";
+  LOG(INFO) << "Prepared to forward with GPU\n";
   const Dtype* window_proposals = bottom[1]->gpu_data();
   for (int i = 0; i < proposal_num_; i++) {
-    std::cout << "forwarding no. " << i << "\n";
+    LOG(INFO) << "Forwarding window proposal No. " << i;
     // Set ROI
     // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     int roi_start_h = window_proposals[4*i];
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
     int roi_end_w = window_proposals[4*i+3];
+    LOG(INFO) << "Region: " << roi_start_h << ", " << roi_start_w << ", " << roi_end_h << ", " << roi_end_w;
     spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
     spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
