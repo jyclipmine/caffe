@@ -46,25 +46,20 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     spp_layers_.push_back(spp_layer);
   }
   dim_ = spp_top_vecs_[0][0]->count();
-  std::cout << "The proposal num is " << proposal_num_ << std::endl;
-  std::cout << "The dim is " << dim_ << std::endl;
   (*top)[0]->Reshape(proposal_num_, 1, 1, dim_);
 }
 
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  LOG(INFO) << "Prepared to forward with CPU\n";
   const Dtype* window_proposals = bottom[1]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
-    LOG(INFO) << "Forwarding window proposal No. " << i;
     // Set ROI
     // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     int roi_start_h = window_proposals[4*i];
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
     int roi_end_w = window_proposals[4*i+3];
-    LOG(INFO) << "Region: " << roi_start_h << ", " << roi_start_w << ", " << roi_end_h << ", " << roi_end_w;
     spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
     spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));

@@ -91,7 +91,6 @@ void ConvolutionLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-      
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = (*top)[i]->mutable_cpu_data();
@@ -101,20 +100,15 @@ Dtype ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     int col_offset = K_ * N_;
     int top_offset = M_ * N_;
     for (int n = 0; n < num_; ++n) {
-      LOG(ERROR) << "Forwarding im2col";
       // First, im2col
       im2col_cpu(bottom_data + bottom[i]->offset(n), channels_, height_,
                         width_, kernel_size_, pad_, stride_, col_data);
-                        
-      LOG(ERROR) << "Forwarding innerproduct";
       // Second, innerproduct with groups
       for (int g = 0; g < group_; ++g) {
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
           (Dtype)1., weight + weight_offset * g, col_data + col_offset * g,
           (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g);
       }
-      
-      LOG(ERROR) << "Forwarding bias";
       // third, add bias
       if (bias_term_) {
         caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
