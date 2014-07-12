@@ -72,13 +72,13 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         int y2 = window_proposals[4*box_id+2];
         int x2 = window_proposals[4*box_id+3];
         nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id, box_id));
-        runNMS(nms_list_1_, nms_th_1);
+        runNMS(nms_list_1_, nms_th_1_);
       }
     }
     nms_list_2_.insert(nms_list_2_.end(), nms_list_1_.begin(), nms_list_1_.end());
   }
   // Between-class NMS
-  runNMS(nms_list_1_, nms_th_1);
+  runNMS(nms_list_2_, nms_th_2_);
   // Write results
   for (list<ScoredBoxes>::iterator iter = nms_list_2_.begin();
       iter != nms_list_2_.end(); ++iter) {
@@ -103,7 +103,7 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
           sboxes_list.erase(to_remove);
         } else if (advance(iter1, 1) == to_remove)
           sboxes_list.erase(to_remove);
-          iter1 = advance(iter2, -1)
+          iter1 = advance(iter2, -1);
         } else {
           sboxes_list.erase(to_remove);
         }
