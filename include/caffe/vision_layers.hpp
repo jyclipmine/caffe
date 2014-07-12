@@ -412,10 +412,10 @@ class ScoredBoxes {
       score_(score), class_id_(class_id), box_id_(box_id) {
       area_ = (y2_ - y1_ + 1) * (x2_ - x1_ + 1);
   }
-  float get_score() { return score_; }
-  int get_class_id() { return class_id_; }
-  int get_box_id() { return box_id_; }
-  float IoU(const ScoredBoxes& another_box) {
+  float get_score() const { return score_; }
+  int get_class_id() const { return class_id_; }
+  int get_box_id() const { return box_id_; }
+  float IoU (const ScoredBoxes& another_box) const {
     int yy1 = std::max(this->y1_, another_box.y1_);
     int xx1 = std::max(this->x1_, another_box.x1_);
     int yy2 = std::min(this->y2_, another_box.y2_);
