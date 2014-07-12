@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "caffe/layer.hpp"
 #include "caffe/util/io.hpp"
