@@ -87,7 +87,7 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     int box_id = int(iter->get_box_id());
     keep_vec[box_id] = 1;
     class_id_vec[box_id] = iter->get_class_id();
-    LOG(INFO) << iter->get_class_id() << "pushed";
+    LOG(INFO) << class_id_vec[box_id] << " pushed";
   }
   return Dtype(0.);
 }
