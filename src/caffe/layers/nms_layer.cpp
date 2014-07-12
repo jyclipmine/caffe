@@ -52,8 +52,8 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // clear previous results
   nms_list_1_.clear();
   nms_list_2_.clear();
-  Dtype* keep_vec = (*top[0])->cpu_data();
-  Dtype* class_vec = (*top[1])->cpu_data();
+  Dtype* keep_vec = (*top)[0]->cpu_data();
+  Dtype* class_vec = (*top)[1]->cpu_data();
   memset(keep_vec, 0, proposal_num_*sizeof(Dtype));
   memset(class_vec, 0, proposal_num_*sizeof(Dtype));
   const Dtype* score_mat = bottom[0]->cpu_data();
@@ -91,14 +91,14 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
   sboxes_list.sort(operator>); // sort the boxes into descending score
-  list<ScoredBoxes>::iterator iter1, iter2, highest_box, to_remove;
+  list<ScoredBoxes>::iterator iter1, iter2, highest_box, to_remove, critical;
   for (iter1 = sboxes_list.begin(); iter1 != sboxes_list.end(); ) {
     highest_box = iter1++;
     critical = iter1;
     ++critical;
     for (iter2 = iter1; iter2 != sboxes_list.end(); ) {
       to_remove = iter2++;
-      float IoU = highest_box->IoU(to_remove);
+      float IoU = highest_box->IoU(*to_remove);
       if (IoU > nms_th) {
         if (iter1 == to_remove) {
           ++iter1;
