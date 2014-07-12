@@ -53,9 +53,9 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   nms_list_1_.clear();
   nms_list_2_.clear();
   Dtype* keep_vec = (*top)[0]->mutable_cpu_data();
-  Dtype* class_vec = (*top)[1]->mutable_cpu_data();
+  Dtype* class_id_vec = (*top)[1]->mutable_cpu_data();
   memset(keep_vec, 0, proposal_num_*sizeof(Dtype));
-  memset(class_vec, 0, proposal_num_*sizeof(Dtype));
+  memset(class_id_vec, 0, proposal_num_*sizeof(Dtype));
   const Dtype* score_mat = bottom[0]->cpu_data();
   const Dtype* window_proposals = bottom[1]->cpu_data();
   const Dtype* class_mask = bottom[2]->cpu_data();
@@ -80,11 +80,13 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // Between-class NMS
   runNMS(nms_list_2_, nms_th_2_);
   // Write results
-  for (list<ScoredBoxes>::iterator iter = nms_list_2_.begin();
-      iter != nms_list_2_.end(); ++iter) {
+  int count = 0;
+  list<ScoredBoxes>::iterator iter;
+  for (iter = nms_list_2_.begin();
+      (iter != nms_list_2_.end()) && (count < disp_num_); ++iter, ++count) {
     int box_id = int(iter->get_box_id());
     keep_vec[box_id] = 1;
-    class_vec[box_id] = iter->get_class_id();
+    class_id_vec[box_id] = iter->get_class_id();
   }
   return Dtype(0.);
 }

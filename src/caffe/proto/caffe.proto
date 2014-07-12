@@ -458,10 +458,10 @@ message SpatialPyramidPoolingParameter {
   optional uint32 roi_end_w = 6;
 }
 
-// Message that stores parameters used by NMSLayer
+// Message that stores parameters used by SPPDetectorLayer
 message SPPDetectorParameter {
-  // To be added into caffe
-  // Currently used for 
+  // To be added
+  // Currently SPPDetectorLayer uses SpatialPyramidPoolingParameter
 }
 
 // Message that stores parameters used by NMSLayer
