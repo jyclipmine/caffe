@@ -54,8 +54,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* window_proposals = bottom[1]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
-    // Set ROI
-    // No checks here. SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
+    // Set ROI. No checks here. 
+    // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     int roi_start_h = window_proposals[4*i];
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
