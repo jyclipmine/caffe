@@ -103,7 +103,7 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
         if (iter1 == to_remove) {
           ++iter1;
           sboxes_list.erase(to_remove);
-        } else if (critical == to_remove)
+        } else if (critical == to_remove) {
           sboxes_list.erase(to_remove);
           iter1 = iter2;
           --iter1;
