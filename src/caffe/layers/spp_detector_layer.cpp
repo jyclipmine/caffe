@@ -53,6 +53,8 @@ template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* window_proposals = bottom[1]->cpu_data();
+  
+#pragma omp parallel for
   for (int i = 0; i < proposal_num_; i++) {
     // Set ROI. No checks here. 
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
