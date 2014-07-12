@@ -24,7 +24,7 @@ namespace caffe {
 void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th);
 
 template <typename Dtype>
-void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void NMSLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   Layer<Dtype>::SetUp(bottom, top);
   CHECK_EQ(bottom[1]->width(), 4) << "proposal dimension must be 1*1*n*4";
@@ -34,7 +34,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   CHECK_EQ(bottom[1]->height(), bottom[0]->num()) << "proposal number must match the num of fc8";
   CHECK_EQ(bottom[0]->channels(), bottom[2]->count()) << "class number of fc8 must be consistent with class mask";
   proposal_num_ = bottom[1]->height();
-  class_num_ = height[0]->channels();
+  class_num_ = bottom[0]->channels();
   NMSParameter nms_param = this->layer_param_.nms_param();
   score_th_ = nms_param.score_th();
   nms_th_1_ = nms_param.nms_th_1();
@@ -47,7 +47,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // clear previous results
   nms_list_1_.clear();
@@ -112,6 +112,6 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
   }
 }
 
-INSTANTIATE_CLASS(SPPDetectorLayer);
+INSTANTIATE_CLASS(NMSLayer);
 
 }  // namespace caffe
