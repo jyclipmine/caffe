@@ -415,11 +415,11 @@ class ScoredBoxes {
   int get_class_id() { return class_id_; }
   int get_box_id() { return box_id_; }
   float IoU(const ScoredBoxes& another_box) {
-    int yy1 = max(this->y1_, another_box.y1_);
-    int xx1 = max(this->x1_, another_box.x1_);
-    int yy2 = min(this->y2_, another_box.y2_);
-    int xx2 = min(this->x2_, another_box.x2_);
-    int inter = max(0, yy2 - yy1 + 1)*max(0, xx2 - xx1 + 1);
+    int yy1 = std::max(this->y1_, another_box.y1_);
+    int xx1 = std::max(this->x1_, another_box.x1_);
+    int yy2 = std::min(this->y2_, another_box.y2_);
+    int xx2 = std::min(this->x2_, another_box.x2_);
+    int inter = std::max(0, yy2 - yy1 + 1) * std::max(0, xx2 - xx1 + 1);
     return float(inter) / float(this->area_ + another_box.area_ - inter);
   }
   
