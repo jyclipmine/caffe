@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <list>
+#include <algorithm>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
