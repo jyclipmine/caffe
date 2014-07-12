@@ -52,8 +52,8 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // clear previous results
   nms_list_1_.clear();
   nms_list_2_.clear();
-  Dtype* keep_vec = (*top)[0]->cpu_data();
-  Dtype* class_vec = (*top)[1]->cpu_data();
+  Dtype* keep_vec = (*top)[0]->mutable_cpu_data();
+  Dtype* class_vec = (*top)[1]->mutable_cpu_data();
   memset(keep_vec, 0, proposal_num_*sizeof(Dtype));
   memset(class_vec, 0, proposal_num_*sizeof(Dtype));
   const Dtype* score_mat = bottom[0]->cpu_data();
