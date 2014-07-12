@@ -17,7 +17,7 @@
 
 using std::string;
 using std::min;
-using std::max
+using std::max;
 
 namespace caffe {
 
@@ -91,9 +91,11 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 
 void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
   sboxes_list.sort(operator>); // sort the boxes into descending score
-  list<ScoredBoxes>::iterator iter1, iter2, highest, to_remove;
+  list<ScoredBoxes>::iterator iter1, iter2, highest_box, to_remove;
   for (iter1 = sboxes_list.begin(); iter1 != sboxes_list.end(); ) {
     highest_box = iter1++;
+    critical = iter1;
+    ++critical;
     for (iter2 = iter1; iter2 != sboxes_list.end(); ) {
       to_remove = iter2++;
       float IoU = highest_box->IoU(to_remove);
@@ -101,9 +103,10 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
         if (iter1 == to_remove) {
           ++iter1;
           sboxes_list.erase(to_remove);
-        } else if (advance(iter1, 1) == to_remove)
+        } else if (critical == to_remove)
           sboxes_list.erase(to_remove);
-          iter1 = advance(iter2, -1);
+          iter1 = iter2;
+          --iter1;
         } else {
           sboxes_list.erase(to_remove);
         }

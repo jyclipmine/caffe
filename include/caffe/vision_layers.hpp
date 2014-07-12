@@ -435,7 +435,7 @@ class ScoredBoxes {
   int area_;
 };
 
-inline bool operator>(const ScoredBoxes& box1, const ScoredBoxes& box2)  {
+inline bool operator>(const ScoredBoxes& box1, const ScoredBoxes& box2) {
   return box1.get_score() > box2.get_score();
 }
 
