@@ -21,24 +21,24 @@ void read_from_camera(Mat& img) {
 
 // void RunBING(Mat& img);
 
-int main() {
-  
+int camera_test() {
   //IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
 	//IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
-	IplImage* pFrame = 0;
 	int index;
-	
 	cout << "camera index:";
 	cin >> index;
+	IplImage* pFrame = 0;
 	CvCapture* pCapture = cvCreateCameraCapture(index);
   while (true) {
-  pFrame = cvQueryFrame(pCapture);
-	cvShowImage("camera input", pFrame);
+    pFrame = cvQueryFrame(pCapture);
+    IplImage* lena = cvLoadImage("lena.bmp");
+	  cvShowImage("camera input", pFrame);
     // unsigned int width = getWidthOfPhoto();
     // unsinged int height = getHeightOfPhoto();
     // unsinged char* dataBuffer = getBufferOfPhoto();
     // Mat image(Size(width, height), CV_8UC1, dataBuffer, Mat::AUTO_STEP);
     // imshow("image", image);
+    cvReleaseImage(&lena);
     waitKey(20);
   }
 }
