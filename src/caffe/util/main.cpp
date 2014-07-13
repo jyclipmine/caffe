@@ -2,22 +2,57 @@
 #include "Objectness.h"
 #include "ValStructVec.h"
 #include "CmShow.h"
+#include <algorithm>
+#include <cmath>
 
-void RunBING(Mat& img)
-{
+inline int round(float r) {
+  return int(r + 0.5f);
+}
+
+int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
+    const int max_size, const int min_size,
+    const int conv5_hend, const int conv5_wend) {
 	int base = 2, W = 8, NSS = 2, numPerSz = 250;
 	DataSetVOC dataset;
 	Objectness objNess(dataset, base, W, NSS);
 	ValStructVec<float, Vec4i> boxesTests;
 	objNess.getObjBndBoxesSingleImg(img, boxesTests, numPerSz);
-	for (int i = 0; i < boxesTests.size(); i++) {
-		// output order: y1 x1 y2 x2
-		cout << boxesTests[i][1] << " " << boxesTests[i][0]
-		  << " " << boxesTests[i][3] << " " << boxesTests[i][2] << endl;
+	memset(boxes, 0, max_size*sizeof(float));
+	int count = 0;
+	for (int i = 0; i < boxesTests.size() && count < boxes_num; i++) {
+	  int x1 = boxesTests[i][0];
+	  int y1 = boxesTests[i][1];
+	  int x2 = boxesTests[i][2];
+	  int y2 = boxesTests[i][2];
+	  bool valid = (x2 - x1 >= min_size) && (x2 - x1 <= max_size)
+	      && (y2 - y1 >= min_size) && (y2 - y1 <= max_size);
+	  if (valid) {
+	    boxes[4*count  ] = float(y1 - 1);
+	    boxes[4*count+1] = float(x1 - 1);
+	    boxes[4*count+2] = float(y2 - 1);
+	    boxes[4*count+3] = float(x2 - 1);
+      conv5_windows[4*count  ] = float(max(round((y1-17)/16), 0));
+      conv5_windows[4*count+1] = float(max(round((x1-17)/16), 0));
+      conv5_windows[4*count+2] = float(min(round((y2-17)/16)+1, conv5_hend));
+      conv5_windows[4*count+3] = float(min(round((x2-17)/16)+1, conv5_wend));
+	    count++;
+	  }
 	}
+	// append [0, 0, 0, 0] as ending mark
+	if (count < boxes_num) {
+	  boxes[4*count  ] = 0;
+    boxes[4*count+1] = 0;
+    boxes[4*count+2] = 0;
+    boxes[4*count+3] = 0;
+    conv5_windows[4*count  ] = 0;
+    conv5_windows[4*count+1] = 0;
+    conv5_windows[4*count+2] = 0;
+    conv5_windows[4*count+3] = 0;
+	}
+	return count;
 }
 
-void RunVOC(double base, int W, int NSS, int numPerSz)
+void runVOC(double base, int W, int NSS, int numPerSz)
 {
 	srand((unsigned int)time(NULL));
 	DataSetVOC voc2007("/home/ronghang/workspace/VOC2007/");

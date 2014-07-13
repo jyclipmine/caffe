@@ -54,15 +54,18 @@ template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* window_proposals = bottom[1]->cpu_data();
-  
-#pragma omp parallel for
   for (int i = 0; i < proposal_num_; i++) {
-    // Set ROI. No checks here. 
-    // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     int roi_start_h = window_proposals[4*i];
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
     int roi_end_w = window_proposals[4*i+3];
+    // an [0 0 0 0] box marks the end of all boxes
+    if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
+      LOG(INFO) << "Forwarding only " << i << " boxes";
+      break;
+    }
+    // Set ROI. No checks here. 
+    // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
     spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
