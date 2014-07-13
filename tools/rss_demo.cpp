@@ -9,6 +9,8 @@
 #include "caffe/caffe.hpp"
 #include <opencv2/opencv.hpp>
 #include <cmath>
+#include <ctime>
+#include <string>
 
 using namespace caffe;  // NOLINT(build/namespaces)
 using namespace cv;
@@ -21,7 +23,6 @@ int runBING(Mat& image, float boxes[], float conv5_windows[], const int boxes_nu
 // get a 640 by 480 demo
 const IplImage* read_from_camera(CvCapture* pCapture) {
   IplImage* pFrame = cvQueryFrame(pCapture);
-  waitKey(20);
   return pFrame;
 }
 
@@ -41,8 +42,7 @@ void Mat2float(float image_data[], const Mat& image, const float channel_mean[])
   }
 }
 
-void load_channel_mean(float channel_mean[]) {
-  const char* filename = "channel_mean.dat";
+void load_channel_mean(float channel_mean[], const char* filename) {
   ifstream fin(filename, ios::binary);
   CV_Assert(fin);
   fin.read(reinterpret_cast<char*>(channel_mean), 3*sizeof(float));
@@ -104,34 +104,62 @@ int main(int argc, char** argv) {
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
 	const int class_num = 7405;
+  const char* class_name_file = "classes.txt";
+  const int device_id = 1;
+  
+  // Storage
 	float boxes[proposal_num*4];
 	float conv5_windows[proposal_num*4];
 	float image_data[image_h*image_w*3];
 	float channel_mean[3];
 	float class_mask[class_num];
-	load_channel_mean(channel_mean);
-	load_class_mask(class_mask);
 	
 	// Initialize network
 	Caffe::set_phase(Caffe::TEST);
 	Caffe::set_mode(Caffe::GPU);
-	Caffe::SetDevice(1);
+	Caffe::SetDevice(device_id);
   Net<float> caffe_test_net(argv[1]);
   caffe_test_net.CopyTrainedLayersFrom(argv[2]);
-
-
+  vector<string> class_name_vec(class_num);
+  
+  // Load data from disk
+	load_channel_mean(argv[3]);
+	load_class_mask(class_mask);
+	
+  // timing
+  clock_t start, finish;
+  
   // run loop
   while (true) {
+    // get image
+    start = clock();
     Mat image(read_from_camera(pCapture), true); // copy data
     CV_Assert((image.cols == image_w) && (image.rows == image_h));
+    finish = clock();
+    cout << "Load image from camera: " << finish - start << " ms" << endl;
+    
+    start = clock();
     int count = runBING(image, boxes, conv5_windows, proposal_num,
         max_size, min_size, conv5_hend, conv5_wend);
-    Mat2float(image_data, image, channel_mean);
+    finish = clock();
+    cout << "Run BING: " << finish - start << " ms" << endl;
     
+    start = clock();
+    Mat2float(image_data, image, channel_mean);
+    finish = clock();
+    cout << "Preprocess image: " << finish - start << " ms" << endl;
+    
+    start = clock();
     const float* result_vecs = forward_network(caffe_test_net, image_data,
         conv5_windows, boxes, class_mask);
+    finish = clock();
+    cout << "Forward image: " << finish - start << " ms" << endl;
+    
+    start = clock();
     draw_results(image, result_vecs, boxes, proposal_num);
     imshow("detection results", image);
+    finish = clock();
+    cout << "Show result: " << finish - start << " ms" << endl;
   }
   return 0;
 }
