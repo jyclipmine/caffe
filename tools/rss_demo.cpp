@@ -93,7 +93,8 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
 void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num, vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
-  const static CvFont font = fontQt("monospace");
+  CvFont font;
+  cvInitFont(&font, CV_FONT_VECTOR0, 1, 1, 0, 1, 8);
   const float* keep_vec = result_vecs;
   // const float* class_id_vec = result_vecs + proposal_num;
   // const float* score_vec = result_vecs + proposal_num*2;
@@ -110,7 +111,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
-      addText(image, class_name_vec[box_id], ul, font);
+      cvPutText(image, class_name_vec[box_id].c_str(), cvPoint(x1, y1), &font, CV_RGB(255,0,0));
       obj_num++;
     }
   }
