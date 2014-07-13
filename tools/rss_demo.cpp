@@ -27,13 +27,13 @@ int main() {
 	CvCapture* pCapture = cvCreateCameraCapture(0);
   while (true) {
   pFrame = cvQueryFrame(pCapture);
-	cvShowImage("head-shoulder detection (color)", pFrame);
+	cvShowImage("camera input", pFrame);
     // unsigned int width = getWidthOfPhoto();
     // unsinged int height = getHeightOfPhoto();
     // unsinged char* dataBuffer = getBufferOfPhoto();
     // Mat image(Size(width, height), CV_8UC1, dataBuffer, Mat::AUTO_STEP);
     // imshow("image", image);
-    waitKey();
+    waitKey(20);
   }
 }
 
