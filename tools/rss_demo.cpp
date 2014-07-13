@@ -111,7 +111,8 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
-      cvPutText(image, class_name_vec[box_id].c_str(), cvPoint(x1, y1), &font, CV_RGB(255,0,0));
+      IplImage iplimage = image;
+      cvPutText(&iplimage, class_name_vec[box_id].c_str(), cvPoint(x1, y1), &font, CV_RGB(255,0,0));
       obj_num++;
     }
   }
