@@ -123,6 +123,7 @@ void Objectness::predictBBoxSII(ValStructVec<float, Vec4i> &valBoxes, const vecI
 // Use numDet to control the final number of proposed bounding boxes, and number of per size (scale and aspect ratio)
 void Objectness::getObjBndBoxes(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, int numDetPerSize)
 {
+  cout << "getObjBndBoxes start" << endl;
 	CV_Assert_(filtersLoaded() , ("SVM filters should be initialized before getting object proposals\n"));
 	vecI sz;
 	predictBBoxSI(img3u, valBoxes, sz, numDetPerSize, false);

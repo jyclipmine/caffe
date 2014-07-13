@@ -9,6 +9,7 @@
 #include "Objectness.h"
 #include "CmShow.h"
 #include "DataSetVOC.h"
+#include <iostream>
 
 DataSetVOC::DataSetVOC()
 {
@@ -17,6 +18,7 @@ DataSetVOC::DataSetVOC()
 
 void Objectness::getObjBndBoxesSingleImg(CMat& img, ValStructVec<float, Vec4i> &boxesTests, int numDetPerSize)
 {
+  cout << "getObjBndBoxesSingleImg start" << endl;
 	//ValStructVec<float, Vec4i> boxesTests;
 	boxesTests.clear();
 	int scales[3] = {1, 3, 5};
