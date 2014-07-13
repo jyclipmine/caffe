@@ -96,7 +96,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num, vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
   CvFont font;
-  cvInitFont(&font, CV_FONT_VECTOR0, 1, 1, 0, 1, 5);
+  cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 2, CV_AA);
   const float* keep_vec = result_vecs;
   const float* class_id_vec = result_vecs + proposal_num;
   const float* score_vec = result_vecs + proposal_num*2;
