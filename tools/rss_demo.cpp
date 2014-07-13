@@ -110,7 +110,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
-      addText(image, class_name_vec[box_id], ul, &font);
+      addText(image, class_name_vec[box_id], ul, font);
       obj_num++;
     }
   }
