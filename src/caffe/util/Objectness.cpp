@@ -47,6 +47,8 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 		printf("Can't load model: %s or %s\n", _S(s1), _S(sI));
 		return 0;
 	}
+	
+	cout << "loadTrainedModel p1" << endl;
 
 	//filters1f = aFilter(0.8f, 8);
 	//normalize(filters1f, filters1f, p, 1, NORM_MINMAX);
@@ -56,14 +58,19 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 	_tigF.update(filters1f);
 	_tigF.reconstruct(filters1f);
 
+  cout << "loadTrainedModel p2" << endl;
+  
 	_svmSzIdxs = idx1i;
 	CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
 	_svmFilter = filters1f;
 
+  cout << "loadTrainedModel p3" << endl;
 	if (!matRead(s2, _svmReW1f) || _svmReW1f.size() != Size(2, _svmSzIdxs.size())){
 		_svmReW1f = Mat();
 		return -1;
 	}
+	cout << "loadTrainedModel p4" << endl;
+	
 	return 1;
 }
 
