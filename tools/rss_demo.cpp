@@ -75,7 +75,7 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
 
 void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num) {
-  const static CvScalar color = cvScalar(255, 0, 0);
+  const static CvScalar color = cvScalar(0, 0, 255);
   const float* keep_vec = result_vecs;
   const float* class_id_vec = result_vecs + proposal_num;
   const float* score_vec = result_vecs + proposal_num*2;
@@ -86,10 +86,10 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       int y2 = boxes[box_id*4+2];
       int x2 = boxes[box_id*4+3];
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
-      line(image, ul, ur, color, 1);
-      line(image, ur, lr, color, 1);
-      line(image, lr, ll, color, 1);
-      line(image, ll, ul, color, 1);
+      line(image, ul, ur, color, 3);
+      line(image, ur, lr, color, 3);
+      line(image, lr, ll, color, 3);
+      line(image, ll, ul, color, 3);
     }
   }
 }
