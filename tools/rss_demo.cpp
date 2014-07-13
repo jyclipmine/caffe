@@ -29,8 +29,8 @@ const IplImage* read_from_camera(CvCapture* pCapture) {
 // Mat is already in BGR channel
 void Mat2float(float image_data[], const Mat& image, const float channel_mean[]) {
   const int channels = 3;
-  const int width = cv_cropped_image.cols;
-  const int height = cv_cropped_image.rows;
+  const int width = image.cols;
+  const int height = image.rows;
   for (int c = 0; c < channels; ++c) {
     for (int h = 0; h < height; ++h) {
       for (int w = 0; w < width; ++w) {
@@ -45,7 +45,7 @@ void load_channel_mean(float channel_mean[]) {
   const char* filename = "channel_mean.dat";
   ifstream fin(filename, ios::binary);
   CV_Assert(fin);
-  fin.read(static_cast<char*>(channel_mean), 3*sizeof(float));
+  fin.read(reinterpret_cast<char*>(channel_mean), 3*sizeof(float));
   CV_Assert(fin);
   fin.close();
   cout << "Channel mean: B = " << channel_mean[0] << ", G = " << channel_mean[1]
@@ -69,11 +69,11 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
       sizeof(float) * input_blobs[2]->count());       
   memcpy(input_blobs[3]->mutable_cpu_data(), class_mask,
       sizeof(float) * input_blobs[3]->count());
-  const vector<Blob<float>*>& result = caffe_test_net.ForwardPrefilled();
+  const vector<Blob<float>*>& result = net.ForwardPrefilled();
   result[0]->cpu_data();
 }
 
-void draw_results(const Mat& image, const float result_vecs[], float boxes[],
+void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num) {
   const static CvScalar color = cvScalar(255, 0, 0);
   const float* keep_vec = result_vecs;
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
         max_size, min_size, conv5_hend, conv5_wend);
     Mat2float(image_data, image, channel_mean);
     
-    const float result_vecs* = forward_network(caffe_test_net, image_data,
+    const float* result_vecs = forward_network(caffe_test_net, image_data,
         conv5_windows, boxes, class_mask);
     draw_results(image, result_vecs, boxes, proposal_num);
     imshow("detection results", image);
