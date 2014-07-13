@@ -3,23 +3,9 @@
 #include "ValStructVec.h"
 #include "CmShow.h"
 
-void RunSingleImg(const char* imgpath);
-void RunObjectness(double base = 2, int W = 8, int NSS = 2, int numPerSz = 250);
-
-int bing_main(int argc, char* argv[])
-{
-	if (argc < 2) {
-		cout << "usage: bing [imgpath]" << endl;
-		return 0;
-	}
-	RunSingleImg(argv[1]);
-	return 0;
-}
-
-void RunSingleImg(const char* imgpath)
+void RunBING(Mat& img)
 {
 	int base = 2, W = 8, NSS = 2, numPerSz = 250;
-	Mat img = imread(imgpath);
 	DataSetVOC dataset;
 	Objectness objNess(dataset, base, W, NSS);
 	ValStructVec<float, Vec4i> boxesTests;
@@ -31,7 +17,7 @@ void RunSingleImg(const char* imgpath)
 	}
 }
 
-void RunObjectness(double base, int W, int NSS, int numPerSz)
+void RunVOC(double base, int W, int NSS, int numPerSz)
 {
 	srand((unsigned int)time(NULL));
 	DataSetVOC voc2007("/home/ronghang/workspace/VOC2007/");
