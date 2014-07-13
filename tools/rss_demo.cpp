@@ -53,6 +53,16 @@ void load_channel_mean(float channel_mean[], const char* filename) {
       << ", R = " << channel_mean[2];
 }
 
+void load_class_name(vector<string>& class_name_vec, const char* filename) {
+  ifstream fin(filename);
+  CHECK(fin) << "cannot open class name file";
+  for (int i = 0; i < class_name_vec.size(); i++) {
+    getline(fin, class_name_vec[i]);
+  }
+  CHECK(fin) << "error loading class name file";
+  fin.close();
+}
+
 void load_class_mask(float class_mask[]) {
   for (int i = 0; i < 7405; i++)
     class_mask[i] = 1;
@@ -81,8 +91,9 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
 }
 
 void draw_results(Mat& image, const float result_vecs[], float boxes[],
-    int proposal_num) {
+    int proposal_num, vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
+  const static CvFont font = fontQt("monospace");
   const float* keep_vec = result_vecs;
   // const float* class_id_vec = result_vecs + proposal_num;
   // const float* score_vec = result_vecs + proposal_num*2;
@@ -99,6 +110,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
+      addText(image, class_name_vec[box_id], ul, &font);
       obj_num++;
     }
   }
@@ -106,7 +118,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
 }
 
 int main(int argc, char** argv) {
-  CHECK_EQ(argc, 4) << "Input argument number mismatch";
+  CHECK_EQ(argc, 5) << "Input argument number mismatch";
   
   // Parameters
 	CvCapture* pCapture = cvCreateCameraCapture(0);
@@ -136,6 +148,7 @@ int main(int argc, char** argv) {
   
   // Load data from disk
 	load_channel_mean(channel_mean, argv[3]);
+	load_class_name(class_name_vec, argv[4]);
 	load_class_mask(class_mask);
 	
   // timing
@@ -170,7 +183,7 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    draw_results(image, result_vecs, boxes, proposal_num);
+    draw_results(image, result_vecs, boxes, proposal_num, class_name_vec);
     imshow("detection results", image);
     finish = clock();
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
