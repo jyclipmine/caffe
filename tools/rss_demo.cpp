@@ -45,12 +45,12 @@ void Mat2float(float image_data[], const Mat& image, const float channel_mean[])
 
 void load_channel_mean(float channel_mean[], const char* filename) {
   ifstream fin(filename, ios::binary);
-  CV_Assert(fin);
+  CHECK(fin) << "cannot open channel mean file";
   fin.read(reinterpret_cast<char*>(channel_mean), 3*sizeof(float));
-  CV_Assert(fin);
+  CHECK(fin) << "error reading channel mean file";
   fin.close();
-  cout << "Channel mean: B = " << channel_mean[0] << ", G = " << channel_mean[1]
-      << ", R = " << channel_mean[2] << endl;
+  LOG(INFO) << "Channel mean: B = " << channel_mean[0] << ", G = " << channel_mean[1]
+      << ", R = " << channel_mean[2];
 }
 
 void load_class_mask(float class_mask[]) {
@@ -59,17 +59,24 @@ void load_class_mask(float class_mask[]) {
 }
 
 const float* forward_network(Net<float>& net, float image_data[], float conv5_windows[],
-    float boxes[], float class_mask[]) {
+    float boxes[], float class_mask[], const int class_num, const int proposal_num,
+    const Mat& image) {
   vector<Blob<float>*>& input_blobs = net.input_blobs();
+  CHECK_EQ(input_blobs[0]->count(), image.rols*image.cols*3) << "input image_data mismatch";
+  CHECK_EQ(input_blobs[1]->count(), proposal_num*4) << "input conv5_windows mismatch";
+  CHECK_EQ(input_blobs[2]->count(), proposal_num*4) << "input boxes mismatch";
+  CHECK_EQ(input_blobs[3]->count(), class_num) << "input class_mask mismatch";
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
-      sizeof(float) * input_blobs[0]->count());  
+      sizeof(float) * input_blobs[0]->count());
   memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
-      sizeof(float) * input_blobs[1]->count());       
+      sizeof(float) * input_blobs[1]->count());
   memcpy(input_blobs[2]->mutable_cpu_data(), boxes,
-      sizeof(float) * input_blobs[2]->count());       
+      sizeof(float) * input_blobs[2]->count());
   memcpy(input_blobs[3]->mutable_cpu_data(), class_mask,
       sizeof(float) * input_blobs[3]->count());
+  
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
+  CHECK_EQ(result[0]->count(), 3*proposal_num) << "input class_mask mismatch";
   return result[0]->cpu_data();
 }
 
@@ -95,15 +102,15 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
 }
 
 int main(int argc, char** argv) {
-  CV_Assert(argc == 4);
+  CHECK_EQ(argc, 4) << "Input argument number mismatch";
   
   // Parameters
 	CvCapture* pCapture = cvCreateCameraCapture(0);
 	const int proposal_num = 2000;
+	const int class_num = 7405;
 	const int conv5_hend = 29, conv5_wend = 39;
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
-	const int class_num = 7405;
   // const char* class_name_file = "classes.txt";
   const int device_id = 1;
   
@@ -135,32 +142,33 @@ int main(int argc, char** argv) {
     // get image
     start = clock();
     Mat image(read_from_camera(pCapture), true); // copy data
-    CV_Assert((image.cols == image_w) && (image.rows == image_h));
+    CHECK_EQ(image.cols, image_w) << "image size mismatch";
+    CHECK_EQ(image.rows, image_h) << "image size mismatch";
     finish = clock();
-    cout << "Load image from camera: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
+    LOG(INFO) << "Load image from camera: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     runBING(image, boxes, conv5_windows, proposal_num,
         max_size, min_size, conv5_hend, conv5_wend);
     finish = clock();
-    cout << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
+    LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     Mat2float(image_data, image, channel_mean);
     finish = clock();
-    cout << "Preprocess image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
+    LOG(INFO) << "Preprocess image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     const float* result_vecs = forward_network(caffe_test_net, image_data,
-        conv5_windows, boxes, class_mask);
+        conv5_windows, boxes, class_mask, class_num, proposal_num, image);
     finish = clock();
-    cout << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
+    LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     draw_results(image, result_vecs, boxes, proposal_num);
     imshow("detection results", image);
     finish = clock();
-    cout << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
+    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
   }
   return 0;
 }
