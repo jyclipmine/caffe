@@ -58,13 +58,14 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   CHECK(fin) << "cannot open class name file";
   for (int i = 0; i < class_name_vec.size(); i++) {
     getline(fin, class_name_vec[i]);
+    LOG(INFO) << "loading class: " << class_name_vec[i];
   }
   CHECK(fin) << "error loading class name file";
   fin.close();
 }
 
 void load_class_mask(float class_mask[]) {
-  for (int i = 0; i < 7405; i++)
+  for (int i = 0; i < 1000; i++)
     class_mask[i] = 1;
 }
 
@@ -124,8 +125,8 @@ int main(int argc, char** argv) {
   
   // Parameters
 	CvCapture* pCapture = cvCreateCameraCapture(0);
-	const int proposal_num = 2000;
-	const int class_num = 7405;
+	const int proposal_num = 1000;
+	const int class_num = 1000;
 	const int conv5_hend = 29, conv5_wend = 39;
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
