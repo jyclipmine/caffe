@@ -26,7 +26,7 @@ const Mat& read_from_camera(CvCapture* pCapture) {
 int main() {
 	CvCapture* pCapture = cvCreateCameraCapture(0);
   while (true) {
-    imshow(read_from_camera(pCapture))
+    imshow(read_from_camera(pCapture));
   }
   return 0;
 }
