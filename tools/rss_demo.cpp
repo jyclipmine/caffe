@@ -52,7 +52,7 @@ void load_channel_mean(float channel_mean[]) {
       << ", R = " << channel_mean[2] << endl;
 }
 
-void load_class_mask(const float class_mask[]) {
+void load_class_mask(float class_mask[]) {
   for (int i = 0; i < 7405; i++)
     class_mask[i] = 1;
 }
@@ -70,7 +70,7 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
   memcpy(input_blobs[3]->mutable_cpu_data(), class_mask,
       sizeof(float) * input_blobs[3]->count());
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  result[0]->cpu_data();
+  return result[0]->cpu_data();
 }
 
 void draw_results(Mat& image, const float result_vecs[], float boxes[],
