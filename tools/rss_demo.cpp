@@ -86,6 +86,8 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
   const float* keep_vec = result_vecs;
   // const float* class_id_vec = result_vecs + proposal_num;
   // const float* score_vec = result_vecs + proposal_num*2;
+  
+  int obj_num = 0;
   for (int box_id = 0; box_id < proposal_num; box_id++) {
     if (keep_vec[box_id]) {
       int y1 = boxes[box_id*4  ];
@@ -97,8 +99,10 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
+      obj_num++;
     }
   }
+  LOG(INFO) << "Found " << obj_num << " objects";
 }
 
 int main(int argc, char** argv) {
