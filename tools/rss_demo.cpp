@@ -21,7 +21,7 @@ void read_from_camera(Mat& img) {
 
 // void RunBING(Mat& img);
 
-int camera_test() {
+int main() {
   //IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
 	//IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
 	int index;
@@ -41,6 +41,7 @@ int camera_test() {
     cvReleaseImage(&lena);
     waitKey(20);
   }
+  return 0;
 }
 
 
