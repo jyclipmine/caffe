@@ -3,12 +3,14 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <iostream>
 
 #include "caffe/caffe.hpp"
 #include <opencv2/opencv.hpp> 
 
 using namespace caffe;  // NOLINT(build/namespaces)
 using namespace cv;
+using namespace std;
 
 // int runNet(int argc, char** argv);
 
@@ -24,7 +26,11 @@ int main() {
   //IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
 	//IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
 	IplImage* pFrame = 0;
-	CvCapture* pCapture = cvCreateCameraCapture(1);
+	int index;
+	
+	cout << "camera index:"
+	cin >> index;
+	CvCapture* pCapture = cvCreateCameraCapture(index);
   while (true) {
   pFrame = cvQueryFrame(pCapture);
 	cvShowImage("camera input", pFrame);
