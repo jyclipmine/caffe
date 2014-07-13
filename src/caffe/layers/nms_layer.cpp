@@ -112,6 +112,8 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
       }
     }
   }
+  void RunSingleImg(const char* imgpath);
+  RunSingleImg("WWW");
 }
 
 INSTANTIATE_CLASS(NMSLayer);
