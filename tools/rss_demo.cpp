@@ -28,7 +28,7 @@ int main() {
 	IplImage* pFrame = 0;
 	int index;
 	
-	cout << "camera index:"
+	cout << "camera index:";
 	cin >> index;
 	CvCapture* pCapture = cvCreateCameraCapture(index);
   while (true) {
