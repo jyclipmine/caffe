@@ -59,7 +59,6 @@ void load_class_mask(float class_mask[]) {
 
 const float* forward_network(Net<float>& net, float image_data[], float conv5_windows[],
     float boxes[], float class_mask[]) {
-  vector<Blob<float>*>& output_blobs = net.output_blobs();
   vector<Blob<float>*>& input_blobs = net.input_blobs();
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
       sizeof(float) * input_blobs[0]->count());  
@@ -77,8 +76,8 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num) {
   const static CvScalar color = cvScalar(0, 0, 255);
   const float* keep_vec = result_vecs;
-  const float* class_id_vec = result_vecs + proposal_num;
-  const float* score_vec = result_vecs + proposal_num*2;
+  // const float* class_id_vec = result_vecs + proposal_num;
+  // const float* score_vec = result_vecs + proposal_num*2;
   for (int box_id = 0; box_id < proposal_num; box_id++) {
     if (keep_vec[box_id]) {
       int y1 = boxes[box_id*4  ];
@@ -104,7 +103,7 @@ int main(int argc, char** argv) {
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
 	const int class_num = 7405;
-  const char* class_name_file = "classes.txt";
+  // const char* class_name_file = "classes.txt";
   const int device_id = 1;
   
   // Storage
@@ -123,7 +122,7 @@ int main(int argc, char** argv) {
   vector<string> class_name_vec(class_num);
   
   // Load data from disk
-	load_channel_mean(argv[3]);
+	load_channel_mean(channel_mean, argv[3]);
 	load_class_mask(class_mask);
 	
   // timing
@@ -139,7 +138,7 @@ int main(int argc, char** argv) {
     cout << "Load image from camera: " << finish - start << " ms" << endl;
     
     start = clock();
-    int count = runBING(image, boxes, conv5_windows, proposal_num,
+    runBING(image, boxes, conv5_windows, proposal_num,
         max_size, min_size, conv5_hend, conv5_wend);
     finish = clock();
     cout << "Run BING: " << finish - start << " ms" << endl;
