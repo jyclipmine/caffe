@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 
@@ -95,10 +96,11 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num, vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
   CvFont font;
-  cvInitFont(&font, CV_FONT_VECTOR0, 1, 1, 0, 1, 8);
+  cvInitFont(&font, CV_FONT_VECTOR0, 1, 1, 0, 1, 5);
   const float* keep_vec = result_vecs;
-  // const float* class_id_vec = result_vecs + proposal_num;
-  // const float* score_vec = result_vecs + proposal_num*2;
+  const float* class_id_vec = result_vecs + proposal_num;
+  const float* score_vec = result_vecs + proposal_num*2;
+  char label[200];
   
   int obj_num = 0;
   for (int box_id = 0; box_id < proposal_num; box_id++) {
@@ -107,13 +109,16 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       int x1 = boxes[box_id*4+1];
       int y2 = boxes[box_id*4+2];
       int x2 = boxes[box_id*4+3];
+      int class_id = class_id_vec[box_id];
+      float score = score_vec[box_id];
+      sprintf(label, "%s: .3%f", class_name_vec[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
       line(image, ul, ur, color, 3);
       line(image, ur, lr, color, 3);
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
       IplImage iplimage = image;
-      cvPutText(&iplimage, class_name_vec[box_id].c_str(), cvPoint(x1, y1), &font, CV_RGB(255,0,0));
+      cvPutText(&iplimage, label, cvPoint(x1, y1), &font, CV_RGB(255,0,0));
       obj_num++;
     }
   }
