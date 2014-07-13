@@ -38,6 +38,7 @@ void Objectness::setColorSpace(int clr)
 
 int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if partial, none, or all loaded
 {
+  cout << "loadTrainedModel start" << endl;
 	if (modelName.size() == 0)
 		modelName = _modelName;
 	CStr s1 = modelName + ".wS1", s2 = modelName + ".wS2", sI = modelName + ".idx";
