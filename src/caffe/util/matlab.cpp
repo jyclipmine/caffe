@@ -21,7 +21,7 @@ void Objectness::getObjBndBoxesSingleImg(CMat& img, ValStructVec<float, Vec4i> &
 	//ValStructVec<float, Vec4i> boxesTests;
 	boxesTests.clear();
 	int scales[3] = {1, 3, 5};
-	for (int clr = MAXBGR; clr <= G; clr++){
+	for (int clr = MAXBGR; clr <= G; clr++) {
 		setColorSpace(clr);
 		loadTrainedModel();
 		ValStructVec<float, Vec4i> boxes;

@@ -10,7 +10,7 @@ public:
 	Objectness(double base = 2, int W = 8, int NSS = 2);
 
 	// Load trained model. 
-	int loadTrainedModel(string modelName = ""); // Return -1, 0, or 1 if partial, none, or all loaded
+	int loadTrainedModel(); // Return -1, 0, or 1 if partial, none, or all loaded
 
 	// Get potential bounding boxes, each of which is represented by a Vec4i for (minX, minY, maxX, maxY).
 	// The trained model should be prepared before calling this function: loadTrainedModel() or trainStageI() + trainStageII().
@@ -67,7 +67,11 @@ private: // Parameters
 	vecI _svmSzIdxs; // Indexes of active size. It's equal to _svmFilters.size() and _svmReW1f.rows
 	Mat _svmFilter; // Filters learned at stage I, each is a _H by _W CV_32F matrix
     FilterTIG _tigF; // TIG filter
-	Mat _svmReW1f; // Re-weight parameters learned at stage II. 	
+	Mat _svmReW1f; // Re-weight parameters learned at stage II.
+	
+	vector<vecI> all_svmSzIdxs;
+	vecM all_svmFilter;
+	vecM all_svmReW1f;
 
 private: // Help functions
 

@@ -26,44 +26,48 @@ Objectness::Objectness(DataSetVOC &voc, double base, int W, int NSS)
 , _Clr(MAXBGR)
 {
 	setColorSpace(_Clr);
+	for (int clr = MAXBGR; clr <= G; clr++) {
+  	_modelName = _voc.resDir + format("ObjNessB%gW%d%s", _base, _W, _clrName[_Clr]);
+	  _trainDirSI = _voc.localDir + format("TrainS1B%gW%d%s/", _base, _W, _clrName[_Clr]);
+	  _bbResDir = _voc.resDir + format("BBoxesB%gW%d%s/", _base, _W, _clrName[_Clr]);
+  	if (modelName.size() == 0)
+		modelName = _modelName;
+	  CStr s1 = modelName + ".wS1", s2 = modelName + ".wS2", sI = modelName + ".idx";
+	  Mat filters1f, reW1f, idx1i, show3u;
+	  if (!matRead(s1, filters1f) || !matRead(sI, idx1i)){
+		  printf("Can't load model: %s or %s\n", _S(s1), _S(sI));
+	  }
+	  //filters1f = aFilter(0.8f, 8);
+	  //normalize(filters1f, filters1f, p, 1, NORM_MINMAX);
+
+	  normalize(filters1f, show3u, 1, 255, NORM_MINMAX, CV_8U);
+	  // CmShow::showTinyMat(_voc.resDir + "Filter.png", show3u);
+	  _tigF.update(filters1f);
+	  _tigF.reconstruct(filters1f);
+    int* data = reinterpret_cast<int*>(idx1i.data);
+    _svmSzIdxs.resize(idx1i.rows*idx1i.cols);
+    copy(data, data + idx1i.rows*idx1i.cols, _svmSzIdxs.begin());
+	  CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
+	  _svmFilter = filters1f;
+	  if (!matRead(s2, _svmReW1f) || _svmReW1f.size() != Size(2, _svmSzIdxs.size())){
+		  _svmReW1f = Mat();
+	  }
+	  all_svmSzIdxs.push_back(_svmSzIdxs);
+	  all_svmFilter.push_back(_svmFilter);
+	  all_svmReW1f.push_back(_svmReW1f);
+	}
 }
 
 void Objectness::setColorSpace(int clr)
 {
 	_Clr = clr;
-	_modelName = _voc.resDir + format("ObjNessB%gW%d%s", _base, _W, _clrName[_Clr]);
-	_trainDirSI = _voc.localDir + format("TrainS1B%gW%d%s/", _base, _W, _clrName[_Clr]);
-	_bbResDir = _voc.resDir + format("BBoxesB%gW%d%s/", _base, _W, _clrName[_Clr]);
 }
 
-int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if partial, none, or all loaded
+int Objectness::loadTrainedModel() // Return -1, 0, or 1 if partial, none, or all loaded
 {
-	if (modelName.size() == 0)
-		modelName = _modelName;
-	CStr s1 = modelName + ".wS1", s2 = modelName + ".wS2", sI = modelName + ".idx";
-	Mat filters1f, reW1f, idx1i, show3u;
-	if (!matRead(s1, filters1f) || !matRead(sI, idx1i)){
-		printf("Can't load model: %s or %s\n", _S(s1), _S(sI));
-		return 0;
-	}
-	//filters1f = aFilter(0.8f, 8);
-	//normalize(filters1f, filters1f, p, 1, NORM_MINMAX);
-
-	normalize(filters1f, show3u, 1, 255, NORM_MINMAX, CV_8U);
-	// CmShow::showTinyMat(_voc.resDir + "Filter.png", show3u);
-	_tigF.update(filters1f);
-	_tigF.reconstruct(filters1f);
-  int* data = reinterpret_cast<int*>(idx1i.data);
-  _svmSzIdxs.resize(idx1i.rows*idx1i.cols);
-  copy(data, data + idx1i.rows*idx1i.cols, _svmSzIdxs.begin());
-	CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
-	_svmFilter = filters1f;
-	if (!matRead(s2, _svmReW1f) || _svmReW1f.size() != Size(2, _svmSzIdxs.size())){
-		_svmReW1f = Mat();
-		return -1;
-	}
-	
-	return 1;
+  _svmSzIdxs = all_svmSzIdxs[_Clr];
+  _svmFilter = all_svmFilter[_Clr];
+  _svmReW1f = all_svmReW1f[_Clr];
 }
 
 void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, vecI &sz, int NUM_WIN_PSZ, bool fast)

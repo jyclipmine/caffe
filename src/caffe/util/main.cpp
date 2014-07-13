@@ -12,9 +12,11 @@ int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
     const int max_size, const int min_size,
     const int conv5_hend, const int conv5_wend) {
 	int base = 2, W = 8, NSS = 2, numPerSz = 250;
-	DataSetVOC dataset;
-	Objectness objNess(dataset, base, W, NSS);
-	ValStructVec<float, Vec4i> boxesTests;
+	static DataSetVOC dataset;
+	static Objectness objNess(dataset, base, W, NSS);
+	static ValStructVec<float, Vec4i> boxesTests;
+	boxesTests.reserve(20000);
+	boxesTests.clear();
 	objNess.getObjBndBoxesSingleImg(img, boxesTests, numPerSz);
 	memset(boxes, 0, max_size*sizeof(float));
 	int count = 0;
