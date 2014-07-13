@@ -22,7 +22,7 @@ int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
 	  int x1 = boxesTests[i][0];
 	  int y1 = boxesTests[i][1];
 	  int x2 = boxesTests[i][2];
-	  int y2 = boxesTests[i][2];
+	  int y2 = boxesTests[i][3];
 	  bool valid = (x2 - x1 >= min_size) && (x2 - x1 <= max_size)
 	      && (y2 - y1 >= min_size) && (y2 - y1 <= max_size);
 	  if (valid) {
