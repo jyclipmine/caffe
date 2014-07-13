@@ -315,7 +315,6 @@ void Objectness::getObjBndBoxesForTests(vector<vector<Vec4i> > &_boxesTests, int
 	vector<ValStructVec<float, Vec4i> > boxesTests;
 	boxesTests.resize(TestNum);
 
-#pragma omp parallel for
 	for (int i = 0; i < TestNum; i++){
 		imgs3u[i] = imread(format(_S(_voc.imgPathW), _S(_voc.testSet[i])));
 		boxesTests[i].reserve(10000);
@@ -329,7 +328,6 @@ void Objectness::getObjBndBoxesForTests(vector<vector<Vec4i> > &_boxesTests, int
 		CmTimer tm("Predict");
 		tm.Start();
 
-#pragma omp parallel for
 		for (int i = 0; i < TestNum; i++){
 			ValStructVec<float, Vec4i> boxes;
 			getObjBndBoxes(imgs3u[i], boxes, numDetPerSize);
@@ -342,7 +340,6 @@ void Objectness::getObjBndBoxesForTests(vector<vector<Vec4i> > &_boxesTests, int
 
 	_boxesTests.resize(TestNum);
 	CmFile::MkDir(_bbResDir);
-#pragma omp parallel for
 	for (int i = 0; i < TestNum; i++){
 		CStr fName = _bbResDir + _voc.testSet[i];
 		ValStructVec<float, Vec4i> &boxes = boxesTests[i];
@@ -358,7 +355,6 @@ void Objectness::getObjBndBoxesForTests(vector<vector<Vec4i> > &_boxesTests, int
 	}
 	evaluatePerImgRecall(_boxesTests, "PerImgAllNS.m", 5000);
 
-#pragma omp parallel for
 	for (int i = 0; i < TestNum; i++){
 		boxesTests[i].sort(false);
 		for (int j = 0; j < boxesTests[i].size(); j++)
