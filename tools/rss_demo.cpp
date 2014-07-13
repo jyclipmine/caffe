@@ -139,6 +139,7 @@ int main(int argc, char** argv) {
   
   // run loop
   while (true) {
+    LOG(INFO) << "-------------------------------------------";
     // get image
     start = clock();
     Mat image(read_from_camera(pCapture), true); // copy data
