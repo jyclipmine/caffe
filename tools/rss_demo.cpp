@@ -137,30 +137,30 @@ int main(int argc, char** argv) {
     Mat image(read_from_camera(pCapture), true); // copy data
     CV_Assert((image.cols == image_w) && (image.rows == image_h));
     finish = clock();
-    cout << "Load image from camera: " << (finish - start) / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Load image from camera: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
     
     start = clock();
     runBING(image, boxes, conv5_windows, proposal_num,
         max_size, min_size, conv5_hend, conv5_wend);
     finish = clock();
-    cout << "Run BING: " << (finish - start) / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
     
     start = clock();
     Mat2float(image_data, image, channel_mean);
     finish = clock();
-    cout << "Preprocess image: " << (finish - start) / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Preprocess image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
     
     start = clock();
     const float* result_vecs = forward_network(caffe_test_net, image_data,
         conv5_windows, boxes, class_mask);
     finish = clock();
-    cout << "Forward image: " << (finish - start) / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
     
     start = clock();
     draw_results(image, result_vecs, boxes, proposal_num);
     imshow("detection results", image);
     finish = clock();
-    cout << "Show result: " << (finish - start) / CLOCKS_PER_SEC << " s" << endl;
+    cout << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms" << endl;
   }
   return 0;
 }
