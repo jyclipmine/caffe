@@ -1,6 +1,7 @@
 #include "kyheader.h"
 #include "Objectness.h"
 #include "CmShow.h"
+#include <iostream>
 
 #define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 void print_null(const char *s) {}
@@ -67,6 +68,7 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 
 void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, vecI &sz, int NUM_WIN_PSZ, bool fast)
 {
+  cout << "predictBBoxSI start" << endl;
 	const int numSz = _svmSzIdxs.size();
 	const int imgW = img3u.cols, imgH = img3u.rows;
 	valBoxes.reserve(10000);
@@ -107,6 +109,7 @@ void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes
 
 void Objectness::predictBBoxSII(ValStructVec<float, Vec4i> &valBoxes, const vecI &sz)
 {
+  cout << "predictBBoxSII start" << endl;
 	int numI = valBoxes.size();
 	for (int i = 0; i < numI; i++){
 		const float* svmIIw = _svmReW1f.ptr<float>(sz[i]);
