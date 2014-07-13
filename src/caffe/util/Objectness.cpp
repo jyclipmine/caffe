@@ -59,9 +59,9 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 	_tigF.reconstruct(filters1f);
 
   cout << "loadTrainedModel p2" << endl;
-  cout << idx1i.rows << endl;
-  cout << idx1i.cols << endl;
-	_svmSzIdxs = idx1i.col(0).clone();
+  int* data = reinterpret_cast<int*>(idx1i.data);
+  _svmSzIdxs.resize(idx1i.rows*idx1i.cols);
+  copy(data, data + idx1i.rows*idx1i.cols, _svmSzIdxs.begin());
 	
 	cout << "loadTrainedModel p2.1" << endl;
 	CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
