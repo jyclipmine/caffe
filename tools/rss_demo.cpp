@@ -111,7 +111,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       int x2 = boxes[box_id*4+3];
       int class_id = class_id_vec[box_id];
       float score = score_vec[box_id];
-      sprintf(label, "%s: .3%f", class_name_vec[class_id].c_str(), score);
+      sprintf(label, "%s: %.3f", class_name_vec[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
       line(image, ul, ur, color, 3);
       line(image, ur, lr, color, 3);
