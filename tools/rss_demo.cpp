@@ -94,7 +94,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
 }
 
 int main(int argc, char** argv) {
-  CV_Assert(argc == 3);
+  CV_Assert(argc == 4);
   
   // Parameters
 	CvCapture* pCapture = cvCreateCameraCapture(0);
