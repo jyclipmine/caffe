@@ -59,7 +59,8 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 	_tigF.reconstruct(filters1f);
 
   cout << "loadTrainedModel p2" << endl;
-  
+  cout << idx1i.rows << endl;
+  cout << idx1i.cols << endl;
 	_svmSzIdxs = idx1i;
 	
 	cout << "loadTrainedModel p2.1" << endl;
