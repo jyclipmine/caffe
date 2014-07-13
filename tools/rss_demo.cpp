@@ -58,7 +58,9 @@ void load_class_mask(const float class_mask[]) {
 }
 
 const float* forward_network(Net<float>& net, float image_data[], float conv5_windows[],
-  float boxes[], float class_mask[]) {
+    float boxes[], float class_mask[]) {
+  vector<Blob<float>*>& output_blobs = net.output_blobs();
+  vector<Blob<float>*>& input_blobs = net.input_blobs();
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
       sizeof(float) * input_blobs[0]->count());  
   memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
@@ -92,7 +94,9 @@ void draw_results(const Mat& image, const float result_vecs[], float boxes[],
   }
 }
 
-int main() {
+int main(int argc, char** argv) {
+  CV_Assert(argc == 3);
+  
   // Parameters
 	CvCapture* pCapture = cvCreateCameraCapture(0);
 	const int proposal_num = 2000;
@@ -114,8 +118,7 @@ int main() {
 	Caffe::SetDevice(1);
   Net<float> caffe_test_net(argv[1]);
   caffe_test_net.CopyTrainedLayersFrom(argv[2]);
-  vector<Blob<float>*>& output_blobs = net_->output_blobs();
-  vector<Blob<float>*>& input_blobs = net_->input_blobs();
+
 
   // run loop
   while (true) {
@@ -124,6 +127,7 @@ int main() {
     int count = runBING(image, boxes, conv5_windows, proposal_num,
         max_size, min_size, conv5_hend, conv5_wend);
     Mat2float(image_data, image, channel_mean);
+    
     const float result_vecs* = forward_network(caffe_test_net, image_data,
         conv5_windows, boxes, class_mask);
     draw_results(image, result_vecs, boxes, proposal_num);
