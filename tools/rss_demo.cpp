@@ -62,7 +62,7 @@ const float* forward_network(Net<float>& net, float image_data[], float conv5_wi
     float boxes[], float class_mask[], const int class_num, const int proposal_num,
     const Mat& image) {
   vector<Blob<float>*>& input_blobs = net.input_blobs();
-  CHECK_EQ(input_blobs[0]->count(), image.rols*image.cols*3) << "input image_data mismatch";
+  CHECK_EQ(input_blobs[0]->count(), image.rows*image.cols*3) << "input image_data mismatch";
   CHECK_EQ(input_blobs[1]->count(), proposal_num*4) << "input conv5_windows mismatch";
   CHECK_EQ(input_blobs[2]->count(), proposal_num*4) << "input boxes mismatch";
   CHECK_EQ(input_blobs[3]->count(), class_num) << "input class_mask mismatch";
