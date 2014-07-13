@@ -112,7 +112,7 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
       }
     }
   }
-  void RunSingleImg(const char* imgpath);
+  void ::RunSingleImg(const char* imgpath);
   RunSingleImg("WWW");
 }
 
