@@ -96,7 +96,7 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
     int proposal_num, vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
   CvFont font;
-  cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 2, CV_AA);
+  cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1, CV_AA);
   const float* keep_vec = result_vecs;
   const float* class_id_vec = result_vecs + proposal_num;
   const float* score_vec = result_vecs + proposal_num*2;
@@ -118,7 +118,9 @@ void draw_results(Mat& image, const float result_vecs[], float boxes[],
       line(image, lr, ll, color, 3);
       line(image, ll, ul, color, 3);
       IplImage iplimage = image;
-      cvPutText(&iplimage, label, cvPoint(x1, y1), &font, CV_RGB(255,0,0));
+      cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font, CV_RGB(255,0,0));
+      LOG(INFO) << "(x1,y1,x2,y2) = (" << x1 << "," << y1 << "," << x2 << ","
+          << y2 << "): " << label;
       obj_num++;
     }
   }
