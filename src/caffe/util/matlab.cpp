@@ -30,9 +30,7 @@ void Objectness::getObjBndBoxesSingleImg(CMat& img, ValStructVec<float, Vec4i> &
 		boxesTests.append(boxes, scales[clr]);
 	}
 	boxesTests.sort(false);
-//	_boxesTests.resize(boxesTests.size());
-//	for (int j = 0; j < boxesTests.size(); j++)
-//		_boxesTests[j] = boxesTests[j];
+	cout << "getObjBndBoxesSingleImg over" << endl;
 }
 
 
