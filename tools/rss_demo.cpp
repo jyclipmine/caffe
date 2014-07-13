@@ -23,6 +23,7 @@ int runBING(Mat& image, float boxes[], float conv5_windows[], const int boxes_nu
 // get a 640 by 480 demo
 const IplImage* read_from_camera(CvCapture* pCapture) {
   IplImage* pFrame = cvQueryFrame(pCapture);
+  waitKey(20);
   return pFrame;
 }
 
@@ -105,6 +106,7 @@ int main(int argc, char** argv) {
 	const int class_num = 7405;
   // const char* class_name_file = "classes.txt";
   const int device_id = 1;
+  
   
   // Storage
 	float boxes[proposal_num*4];
