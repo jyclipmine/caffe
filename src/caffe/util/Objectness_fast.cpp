@@ -30,9 +30,7 @@ Objectness::Objectness(DataSetVOC &voc, double base, int W, int NSS)
   	_modelName = _voc.resDir + format("ObjNessB%gW%d%s", _base, _W, _clrName[_Clr]);
 	  _trainDirSI = _voc.localDir + format("TrainS1B%gW%d%s/", _base, _W, _clrName[_Clr]);
 	  _bbResDir = _voc.resDir + format("BBoxesB%gW%d%s/", _base, _W, _clrName[_Clr]);
-  	if (modelName.size() == 0)
-		modelName = _modelName;
-	  CStr s1 = modelName + ".wS1", s2 = modelName + ".wS2", sI = modelName + ".idx";
+	  CStr s1 = _modelName + ".wS1", s2 = _modelName + ".wS2", sI = _modelName + ".idx";
 	  Mat filters1f, reW1f, idx1i, show3u;
 	  if (!matRead(s1, filters1f) || !matRead(sI, idx1i)){
 		  printf("Can't load model: %s or %s\n", _S(s1), _S(sI));
@@ -68,6 +66,7 @@ int Objectness::loadTrainedModel() // Return -1, 0, or 1 if partial, none, or al
   _svmSzIdxs = all_svmSzIdxs[_Clr];
   _svmFilter = all_svmFilter[_Clr];
   _svmReW1f = all_svmReW1f[_Clr];
+  return 1;
 }
 
 void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, vecI &sz, int NUM_WIN_PSZ, bool fast)
