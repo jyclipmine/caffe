@@ -19,8 +19,6 @@ using std::string;
 using std::min;
 using std::max;
 
-void RunSingleImg(const char* imgpath);
-
 namespace caffe {
 
 void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th);
@@ -114,7 +112,6 @@ void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
       }
     }
   }
-  RunSingleImg("WWW");
 }
 
 INSTANTIATE_CLASS(NMSLayer);
