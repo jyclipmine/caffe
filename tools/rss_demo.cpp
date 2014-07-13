@@ -104,8 +104,8 @@ int main(int argc, char** argv) {
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
 	const int class_num = 7405;
-	float boxes[proposal_num];
-	float conv5_windows[proposal_num];
+	float boxes[proposal_num*4];
+	float conv5_windows[proposal_num*4];
 	float image_data[image_h*image_w*3];
 	float channel_mean[3];
 	float class_mask[class_num];
