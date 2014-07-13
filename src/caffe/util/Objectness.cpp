@@ -38,7 +38,6 @@ void Objectness::setColorSpace(int clr)
 
 int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if partial, none, or all loaded
 {
-  cout << "loadTrainedModel start" << endl;
 	if (modelName.size() == 0)
 		modelName = _modelName;
 	CStr s1 = modelName + ".wS1", s2 = modelName + ".wS2", sI = modelName + ".idx";
@@ -47,9 +46,6 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 		printf("Can't load model: %s or %s\n", _S(s1), _S(sI));
 		return 0;
 	}
-	
-	cout << "loadTrainedModel p1" << endl;
-
 	//filters1f = aFilter(0.8f, 8);
 	//normalize(filters1f, filters1f, p, 1, NORM_MINMAX);
 
@@ -57,32 +53,21 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
 	// CmShow::showTinyMat(_voc.resDir + "Filter.png", show3u);
 	_tigF.update(filters1f);
 	_tigF.reconstruct(filters1f);
-
-  cout << "loadTrainedModel p2" << endl;
   int* data = reinterpret_cast<int*>(idx1i.data);
   _svmSzIdxs.resize(idx1i.rows*idx1i.cols);
   copy(data, data + idx1i.rows*idx1i.cols, _svmSzIdxs.begin());
-	
-	cout << "loadTrainedModel p2.1" << endl;
 	CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
-	
-	cout << "loadTrainedModel p2.2" << endl;
-	
 	_svmFilter = filters1f;
-
-  cout << "loadTrainedModel p3" << endl;
 	if (!matRead(s2, _svmReW1f) || _svmReW1f.size() != Size(2, _svmSzIdxs.size())){
 		_svmReW1f = Mat();
 		return -1;
 	}
-	cout << "loadTrainedModel p4" << endl;
 	
 	return 1;
 }
 
 void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, vecI &sz, int NUM_WIN_PSZ, bool fast)
 {
-  cout << "predictBBoxSI start" << endl;
 	const int numSz = _svmSzIdxs.size();
 	const int imgW = img3u.cols, imgH = img3u.rows;
 	valBoxes.reserve(10000);
@@ -123,7 +108,6 @@ void Objectness::predictBBoxSI(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes
 
 void Objectness::predictBBoxSII(ValStructVec<float, Vec4i> &valBoxes, const vecI &sz)
 {
-  cout << "predictBBoxSII start" << endl;
 	int numI = valBoxes.size();
 	for (int i = 0; i < numI; i++){
 		const float* svmIIw = _svmReW1f.ptr<float>(sz[i]);
@@ -137,7 +121,6 @@ void Objectness::predictBBoxSII(ValStructVec<float, Vec4i> &valBoxes, const vecI
 // Use numDet to control the final number of proposed bounding boxes, and number of per size (scale and aspect ratio)
 void Objectness::getObjBndBoxes(CMat &img3u, ValStructVec<float, Vec4i> &valBoxes, int numDetPerSize)
 {
-  cout << "getObjBndBoxes start" << endl;
 	CV_Assert_(filtersLoaded() , ("SVM filters should be initialized before getting object proposals\n"));
 	vecI sz;
 	predictBBoxSI(img3u, valBoxes, sz, numDetPerSize, false);

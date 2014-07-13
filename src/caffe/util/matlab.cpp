@@ -18,7 +18,6 @@ DataSetVOC::DataSetVOC()
 
 void Objectness::getObjBndBoxesSingleImg(CMat& img, ValStructVec<float, Vec4i> &boxesTests, int numDetPerSize)
 {
-  cout << "getObjBndBoxesSingleImg start" << endl;
 	//ValStructVec<float, Vec4i> boxesTests;
 	boxesTests.clear();
 	int scales[3] = {1, 3, 5};
@@ -30,7 +29,6 @@ void Objectness::getObjBndBoxesSingleImg(CMat& img, ValStructVec<float, Vec4i> &
 		boxesTests.append(boxes, scales[clr]);
 	}
 	boxesTests.sort(false);
-	cout << "getObjBndBoxesSingleImg over" << endl;
 }
 
 
