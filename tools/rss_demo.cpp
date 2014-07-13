@@ -24,7 +24,7 @@ int main() {
   //IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
 	//IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
 	IplImage* pFrame = 0;
-	CvCapture* pCapture = cvCreateCameraCapture(0);
+	CvCapture* pCapture = cvCreateCameraCapture(1);
   while (true) {
   pFrame = cvQueryFrame(pCapture);
 	cvShowImage("camera input", pFrame);
