@@ -61,7 +61,12 @@ int Objectness::loadTrainedModel(string modelName) // Return -1, 0, or 1 if part
   cout << "loadTrainedModel p2" << endl;
   
 	_svmSzIdxs = idx1i;
+	
+	cout << "loadTrainedModel p2.1" << endl;
 	CV_Assert(_svmSzIdxs.size() > 1 && filters1f.size() == Size(_W, _W) && filters1f.type() == CV_32F);
+	
+	cout << "loadTrainedModel p2.2" << endl;
+	
 	_svmFilter = filters1f;
 
   cout << "loadTrainedModel p3" << endl;
