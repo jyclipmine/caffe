@@ -20,8 +20,9 @@ void read_from_camera(Mat& img) {
 void RunBING(Mat& img);
 
 int main() {
-  IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
-	IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
+  
+  //IplImage* detect_result_color = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 3);
+	//IplImage* detect_result_gray  = cvCreateImage(cvSize(FRAME_W, FRAME_H), 8, 1);
 	IplImage* pFrame = 0;
 	CvCapture* pCapture = cvCreateCameraCapture(1);
   while (true) {
