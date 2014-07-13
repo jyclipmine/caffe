@@ -19,7 +19,7 @@ const Mat& read_from_camera(CvCapture* pCapture) {
   IplImage* pFrame = cvQueryFrame(pCapture);
   waitKey(20);
   static Mat camera_input(pFrame, 0);
-  return Mat camera_input;
+  return camera_input;
 }
 
 // void RunBING(Mat& img);
