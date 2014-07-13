@@ -5,10 +5,6 @@
 #include <algorithm>
 #include <cmath>
 
-inline int round(float r) {
-  return int(r + 0.5f);
-}
-
 int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
     const int max_size, const int min_size,
     const int conv5_hend, const int conv5_wend) {
@@ -31,10 +27,10 @@ int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
 	    boxes[4*count+1] = float(x1 - 1);
 	    boxes[4*count+2] = float(y2 - 1);
 	    boxes[4*count+3] = float(x2 - 1);
-      conv5_windows[4*count  ] = float(max(round((y1-17)/16), 0));
-      conv5_windows[4*count+1] = float(max(round((x1-17)/16), 0));
-      conv5_windows[4*count+2] = float(min(round((y2-17)/16)+1, conv5_hend));
-      conv5_windows[4*count+3] = float(min(round((x2-17)/16)+1, conv5_wend));
+      conv5_windows[4*count  ] = float(max(cvRound((y1-17)/16), 0.f));
+      conv5_windows[4*count+1] = float(max(cvRound((x1-17)/16), 0.f));
+      conv5_windows[4*count+2] = float(min(cvRound((y2-17)/16)+1, float(conv5_hend)));
+      conv5_windows[4*count+3] = float(min(cvRound((x2-17)/16)+1, float(conv5_wend)));
 	    count++;
 	  }
 	}
