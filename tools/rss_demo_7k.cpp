@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
 	
 	// Initialize network
 	Caffe::set_phase(Caffe::TEST);
-	Caffe::set_mode(Caffe::CPU);
+	Caffe::set_mode(Caffe::GPU);
 	Caffe::SetDevice(device_id);
   Net<float> caffe_test_net(argv[1]);
   caffe_test_net.CopyTrainedLayersFrom(argv[2]);
