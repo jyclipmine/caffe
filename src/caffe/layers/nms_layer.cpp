@@ -18,6 +18,7 @@
 using std::string;
 using std::min;
 using std::max;
+using std::list;
 
 namespace caffe {
 
