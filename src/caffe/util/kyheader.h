@@ -22,10 +22,6 @@
 #include <math.h>
 #include <time.h>
 #include <fstream>
-//#include <random>
-//#include <atlstr.h>
-//#include <atltypes.h>
-#include <omp.h>
 #include <strstream>
 using namespace std;
 
@@ -40,9 +36,6 @@ using namespace std;
 #define cvLIB(name) "opencv_" name CV_VERSION_ID
 #endif
 
-#pragma comment( lib, cvLIB("core"))
-#pragma comment( lib, cvLIB("imgproc"))
-#pragma comment( lib, cvLIB("highgui"))
 using namespace cv;
 #ifdef WIN32
 /* windows stuff */
