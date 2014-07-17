@@ -402,8 +402,29 @@ class SPPDetectorLayer : public Layer<Dtype> {
   vector<vector<Blob<Dtype>*> > spp_top_vecs_;
 };
 
-// Forward declare ScoredBoxes for use in NMSLayer
-class ScoredBoxes;
+// Class ScoredBoxes for use in NMSLayer
+class ScoredBoxes {
+ public:
+  ScoredBoxes(int y1, int x1, int y2, int x2, float score,
+      int class_id, int box_id): y1_(y1), x1_(x1), y2_(y2), x2_(x2),
+      score_(score), class_id_(class_id), box_id_(box_id) {
+      area_ = (y2_ - y1_ + 1) * (x2_ - x1_ + 1);
+  }
+  float get_score() const { return score_; }
+  int get_class_id() const { return class_id_; }
+  int get_box_id() const { return box_id_; }
+  float IoU(const ScoredBoxes& another_box) const;
+  
+ private:
+  int y1_;
+  int x1_;
+  int y2_;
+  int x2_;
+  float score_;
+  int class_id_;
+  int box_id_;
+  int area_;
+};
 
 /* NMSLayer
 */
