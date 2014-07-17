@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <leveldb/db.h>
 #include <pthread.h>
-#include <omp.h>
 
 #include <string>
 #include <vector>
