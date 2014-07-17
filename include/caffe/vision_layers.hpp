@@ -7,7 +7,6 @@
 #include <utility>
 #include <vector>
 #include <list>
-#include <algorithm>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -17,8 +16,6 @@
 #include "caffe/loss_layers.hpp"
 #include "caffe/neuron_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
-
-using std::list;
 
 namespace caffe {
 
@@ -405,39 +402,8 @@ class SPPDetectorLayer : public Layer<Dtype> {
   vector<vector<Blob<Dtype>*> > spp_top_vecs_;
 };
 
-class ScoredBoxes {
- public:
-  ScoredBoxes(int y1, int x1, int y2, int x2, float score,
-      int class_id, int box_id): y1_(y1), x1_(x1), y2_(y2), x2_(x2),
-      score_(score), class_id_(class_id), box_id_(box_id) {
-      area_ = (y2_ - y1_ + 1) * (x2_ - x1_ + 1);
-  }
-  float get_score() const { return score_; }
-  int get_class_id() const { return class_id_; }
-  int get_box_id() const { return box_id_; }
-  float IoU (const ScoredBoxes& another_box) const {
-    int yy1 = std::max(this->y1_, another_box.y1_);
-    int xx1 = std::max(this->x1_, another_box.x1_);
-    int yy2 = std::min(this->y2_, another_box.y2_);
-    int xx2 = std::min(this->x2_, another_box.x2_);
-    int inter = std::max(0, yy2 - yy1 + 1) * std::max(0, xx2 - xx1 + 1);
-    return float(inter) / float(this->area_ + another_box.area_ - inter);
-  }
-  
- private:
-  int y1_;
-  int x1_;
-  int y2_;
-  int x2_;
-  float score_;
-  int class_id_;
-  int box_id_;
-  int area_;
-};
-
-inline bool operator>(const ScoredBoxes& box1, const ScoredBoxes& box2) {
-  return box1.get_score() > box2.get_score();
-}
+// Forward declare ScoredBoxes for use in NMSLayer
+class ScoredBoxes;
 
 /* NMSLayer
 */
@@ -477,8 +443,8 @@ class NMSLayer : public Layer<Dtype> {
   int disp_num_;
   int proposal_num_;
   int class_num_;
-  list<ScoredBoxes> nms_list_1_;
-  list<ScoredBoxes> nms_list_2_;
+  std::list<ScoredBoxes> nms_list_1_;
+  std::list<ScoredBoxes> nms_list_2_;
 };
 
 }  // namespace caffe
