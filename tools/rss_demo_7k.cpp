@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
   // const char* class_name_file = "classes.txt";
-  const int device_id = 1;
+  const int device_id = 0;
   
   
   // Storage
