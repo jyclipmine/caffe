@@ -22,22 +22,26 @@ template <typename Dtype>
 void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   Layer<Dtype>::SetUp(bottom, top);
-  CHECK_EQ(bottom[1]->width(), 4) << "proposal dimension must be 1*1*n*4";
-  CHECK_GE(bottom[1]->height(), 0) << "proposal dimension must be 1*1*n*4";
-  CHECK_EQ(bottom[1]->channels(), 1) << "proposal dimension must be 1*1*n*4";
-  CHECK_EQ(bottom[1]->num(), 1) << "proposal dimension must be 1*1*n*4";
-  proposal_num_ = bottom[1]->height();
   
+  CHECK_EQ(bottom[bottom.size() - 2]->width(), 4) << "proposal dimension must be 1*1*n*4";
+  CHECK_GE(bottom[bottom.size() - 2]->height(), 0) << "proposal dimension must be 1*1*n*4";
+  CHECK_EQ(bottom[bottom.size() - 2]->channels(), 1) << "proposal dimension must be 1*1*n*4";
+  CHECK_EQ(bottom[bottom.size() - 2]->num(), 1) << "proposal dimension must be 1*1*n*4";
+  CHECK_EQ(bottom[bottom.size() - 2]->height(), bottom[bottom.size() - 1]->count())
+      << "numbers of region proposal don't match";
+  scale_num_ = bottom.size() - 2;
+  proposal_num_ = bottom[bottom.size() - 2]->height();
+    
   // Set up inner layers
   LayerParameter layer_param;
   SpatialPyramidPoolingParameter* spatial_pyramid_pooling_param
       = layer_param.mutable_spatial_pyramid_pooling_param();
   *spatial_pyramid_pooling_param = this->layer_param_.spatial_pyramid_pooling_param();
-  for (int i = 0; i < proposal_num_; i++) {
+  for (int scale = 0; scale < scale_num_; scale++) {
     vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
     vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
-    spp_bottom[0]->ReshapeLike(*(bottom[0]));
-    spp_bottom[0]->ShareData(*(bottom[0]));
+    spp_bottom[0]->ReshapeLike(*(bottom[scale]));
+    spp_bottom[0]->ShareData(*(bottom[scale]));
     shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
         new SpatialPyramidPoolingLayer<Dtype>(layer_param));
     spp_layer->SetUp(spp_bottom, &spp_top);
@@ -52,24 +56,29 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  const Dtype* window_proposals = bottom[1]->cpu_data();
+  const Dtype* window_proposals = bottom[scale_num_]->cpu_data();
+  const Dtype* window_scales = bottom[scale_num_+1]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
     int roi_start_h = window_proposals[4*i];
     int roi_start_w = window_proposals[4*i+1];
     int roi_end_h = window_proposals[4*i+2];
     int roi_end_w = window_proposals[4*i+3];
+    int scale = window_scales[i];
     // an [0 0 0 0] box marks the end of all boxes
     if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
       LOG(INFO) << "Forwarding only " << i << " boxes";
       break;
     }
+    CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << i;
+    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << i;
+    
     // Set ROI. No checks here. 
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
-    spp_layers_[i]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
+    spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
-    spp_layers_[i]->Forward(spp_bottom_vecs_[i], &(spp_top_vecs_[i]));
+    spp_layers_[scale]->Forward(spp_bottom_vecs_[scale], &(spp_top_vecs_[scale]));
     // Copy the data
-    caffe_copy(dim_, spp_top_vecs_[i][0]->cpu_data(),
+    caffe_copy(dim_, spp_top_vecs_[scale][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + dim_ * i);
   }
   return Dtype(0.);

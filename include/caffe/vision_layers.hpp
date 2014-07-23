@@ -376,7 +376,7 @@ class SPPDetectorLayer : public Layer<Dtype> {
   virtual inline LayerParameter_LayerType type() const {
     return LayerParameter_LayerType_SPP_DETECTOR;
   }
-  virtual inline int ExactNumBottomBlobs() const { return 2; }
+  virtual inline int MinBottomBlobs() const { return 3; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -395,6 +395,7 @@ class SPPDetectorLayer : public Layer<Dtype> {
     LOG(FATAL) << "Backward not supported for SPPDetectorLayer";
   }
 
+  int scale_num_;
   int proposal_num_;
   int dim_;
   vector<shared_ptr<SpatialPyramidPoolingLayer<Dtype> > > spp_layers_;
