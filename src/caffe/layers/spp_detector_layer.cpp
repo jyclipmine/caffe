@@ -56,14 +56,14 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  const Dtype* window_proposals = bottom[scale_num_]->cpu_data();
-  const Dtype* window_scales = bottom[scale_num_+1]->cpu_data();
+  const Dtype* conv_windows = bottom[scale_num_]->cpu_data();
+  const Dtype* conv_scales = bottom[scale_num_+1]->cpu_data();
   for (int i = 0; i < proposal_num_; i++) {
-    int roi_start_h = window_proposals[4*i];
-    int roi_start_w = window_proposals[4*i+1];
-    int roi_end_h = window_proposals[4*i+2];
-    int roi_end_w = window_proposals[4*i+3];
-    int scale = window_scales[i];
+    int roi_start_h = conv_windows[4*i];
+    int roi_start_w = conv_windows[4*i+1];
+    int roi_end_h = conv_windows[4*i+2];
+    int roi_end_w = conv_windows[4*i+3];
+    int scale = conv_scales[i];
     // an [0 0 0 0] box marks the end of all boxes
     if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
       LOG(INFO) << "Forwarding only " << i << " boxes";
