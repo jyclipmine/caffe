@@ -83,6 +83,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << n;
     CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << n;
     // Copy data into SPP net
+    spp_bottom_vecs_[scale][0]->set_cpu_data(bottom[0]->cpu_data() + conv5_dim_ * scale);
+    spp_top_vecs_[scale][0]->set_cpu_data((*top)[0]->cpu_data() + spp5_dim_ * n);
     //caffe_copy(conv5_dim_, bottom[0]->cpu_data() + conv5_dim_ * scale,
     //    spp_bottom_vecs_[scale][0]->mutable_cpu_data());
     // Set ROI. No checks here. 
