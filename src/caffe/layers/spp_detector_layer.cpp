@@ -39,7 +39,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   proposal_num_ = bottom[1]->height();
   
   LOG(INFO) << "There are " << scale_num_ << " scales and " << proposal_num_
-      << " window proposals (in each batch);
+      << " window proposals (in each batch)";
     
   // Set up inner layers
   // There is one SPP layer for each scale
