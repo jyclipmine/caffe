@@ -70,6 +70,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
+  LOG(INFO) << "Preparing to forward";
   const Dtype* conv_windows = bottom[scale_num_]->cpu_data();
   const Dtype* conv_scales = bottom[scale_num_+1]->cpu_data();
   int n = 0;
