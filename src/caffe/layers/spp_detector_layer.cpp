@@ -70,9 +70,8 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  LOG(INFO) << "Preparing to forward";
-  const Dtype* conv_windows = bottom[scale_num_]->cpu_data();
-  const Dtype* conv_scales = bottom[scale_num_+1]->cpu_data();
+  const Dtype* conv_windows = bottom[1]->cpu_data();
+  const Dtype* conv_scales = bottom[2]->cpu_data();
   int n = 0;
   for (n = 0; n < proposal_num_; n++) {
     int roi_start_h = conv_windows[4*n];
@@ -89,16 +88,11 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Set ROI. No checks here. 
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
-    LOG(INFO) << "No. " << i << " setROI done.";
-    
     // Forward
     spp_layers_[scale]->Forward(spp_bottom_vecs_[scale], &(spp_top_vecs_[scale]));
-    LOG(INFO) << "No. " << i << " forward done.";
-    
     // Copy the data
     caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
-    LOG(INFO) << "No. " << i << " copy done.";
   }
   LOG(INFO) << "Forwarding " << n << " boxes in this batch";
   return Dtype(0.);
