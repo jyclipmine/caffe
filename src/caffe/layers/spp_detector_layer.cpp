@@ -52,10 +52,6 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
     // There is one SPP layer for each scale
     spp_bottom[0]->Reshape(1, bottom[0]->channels(), bottom[0]->height(), bottom[0]->width());
-    // The bottom blob of each SPP layer shares data with the conv5 map of the 
-    // corresponding scale
-    // spp_bottom[0]->set_cpu_data(bottom[0]->mutable_cpu_data() + conv5_dim_ * scale);
-    // spp_bottom[0]->ShareData(*bottom[0]);
     shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
         new SpatialPyramidPoolingLayer<Dtype>(layer_param));
     spp_layer->SetUp(spp_bottom, &spp_top);
