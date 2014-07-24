@@ -55,7 +55,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     // The bottom blob of each SPP layer shares data with the conv5 map of the 
     // corresponding scale
     // spp_bottom[0]->set_cpu_data(bottom[0]->mutable_cpu_data() + conv5_dim_ * scale);
-    spp_bottom[0]->ShareData(*bottom[0]);
+    // spp_bottom[0]->ShareData(*bottom[0]);
     shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
         new SpatialPyramidPoolingLayer<Dtype>(layer_param));
     spp_layer->SetUp(spp_bottom, &spp_top);
@@ -85,13 +85,16 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       break;
     }
     CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << n;
-    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << n; 
+    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << n;
+    // Copy data into SPP net
+    caffe_copy(conv5_dim_, bottom[0]->cpu_data() + conv5_dim_ * scale,
+        spp_bottom_vecs_[scale][0]->mutable_cpu_data());
     // Set ROI. No checks here. 
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
     spp_layers_[scale]->Forward(spp_bottom_vecs_[scale], &(spp_top_vecs_[scale]));
-    // Copy the data
+    // Copy data out of SPP net
     caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
   }
