@@ -376,7 +376,7 @@ class SPPDetectorLayer : public Layer<Dtype> {
   virtual inline LayerParameter_LayerType type() const {
     return LayerParameter_LayerType_SPP_DETECTOR;
   }
-  virtual inline int MinBottomBlobs() const { return 3; }
+  virtual inline int ExactNumBottomBlobs() const { return 3; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
@@ -397,7 +397,8 @@ class SPPDetectorLayer : public Layer<Dtype> {
 
   int scale_num_;
   int proposal_num_;
-  int dim_;
+  int conv5_dim_;
+  int spp5_dim_;
   vector<shared_ptr<SpatialPyramidPoolingLayer<Dtype> > > spp_layers_;
   vector<vector<Blob<Dtype>*> > spp_bottom_vecs_;
   vector<vector<Blob<Dtype>*> > spp_top_vecs_;
