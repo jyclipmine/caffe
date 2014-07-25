@@ -67,8 +67,8 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  const Dtype* conv_windows = bottom[1]->gpu_data();
-  const Dtype* conv_scales = bottom[2]->gpu_data();
+  const Dtype* conv_windows = bottom[1]->cpu_data();
+  const Dtype* conv_scales = bottom[2]->cpu_data();
   int n = 0;
   for (n = 0; n < proposal_num_; n++) {
     int roi_start_h = conv_windows[4*n];
@@ -85,8 +85,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // Copy data into SPP net
     //spp_bottom_vecs_[scale][0]->set_gpu_data(bottom[0]->mutable_gpu_data() + conv5_dim_ * scale);
     //spp_top_vecs_[scale][0]->set_gpu_data((*top)[0]->mutable_gpu_data() + spp5_dim_ * n);
-    //caffe_copy(conv5_dim_, bottom[0]->gpu_data() + conv5_dim_ * scale,
-    //    spp_bottom_vecs_[scale][0]->mutable_gpu_data());
+    caffe_copy(conv5_dim_, bottom[0]->gpu_data() + conv5_dim_ * scale,
+        spp_bottom_vecs_[scale][0]->mutable_gpu_data());
     // Set ROI. No checks here. 
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
