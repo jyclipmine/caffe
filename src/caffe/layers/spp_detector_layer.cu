@@ -34,7 +34,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << n;
     CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << n;
     // Copy data into SPP net
-    cudaMemcpy(conv5_dim_, bottom[0]->gpu_data() + conv5_dim_ * scale,
+    caffe_copy(conv5_dim_, bottom[0]->gpu_data() + conv5_dim_ * scale,
         spp_bottom_vecs_[scale][0]->mutable_gpu_data());
     // Set ROI. No checks here.
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
@@ -42,7 +42,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     // Forward
     spp_layers_[scale]->Forward(spp_bottom_vecs_[scale], &(spp_top_vecs_[scale]));
     // Copy data out of SPP net
-    cudaMemcpy(spp5_dim_, spp_top_vecs_[scale][0]->gpu_data(),
+    caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->gpu_data(),
         (*top)[0]->mutable_gpu_data() + spp5_dim_ * n);
   }
   LOG(INFO) << "Forwarding " << n << " boxes in this batch";
