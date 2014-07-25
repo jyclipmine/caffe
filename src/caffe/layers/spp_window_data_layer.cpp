@@ -136,7 +136,7 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   label_hist.insert(std::make_pair(0, 0));
 
   string hashtag;
-  int image_index, channels;
+  int image_index;
   if (!(infile >> hashtag >> image_index)) {
     LOG(FATAL) << "Window file is empty";
   }
@@ -148,7 +148,6 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     // read image dimensions
     vector<int> image_size(3);
     infile >> image_size[0] >> image_size[1] >> image_size[2];
-    channels = image_size[0];
     image_database_.push_back(std::make_pair(image_path, image_size));
 
     // read each box
@@ -232,7 +231,6 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 template <typename Dtype>
 void SPPWindowDataLayer<Dtype>::CreatePrefetchThread() {
   const bool prefetch_needs_rand =
-      this->layer_param_.spp_window_data_param().mirror() ||
       this->layer_param_.spp_window_data_param().crop_size();
   if (prefetch_needs_rand) {
     const unsigned int prefetch_rng_seed = caffe_rng_rand();
