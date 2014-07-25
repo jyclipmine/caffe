@@ -383,9 +383,7 @@ class SPPDetectorLayer : public Layer<Dtype> {
   virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top) {
-    return Forward_cpu(bottom, top);
-  }
+      vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
     LOG(FATAL) << "Backward not supported for SPPDetectorLayer";
