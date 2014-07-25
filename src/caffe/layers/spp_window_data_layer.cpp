@@ -72,12 +72,12 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
       // read feature into cpu memory
       Dtype* target_addr = top_data + spp5_dim * item_id;
       int read_bytes = sizeof(Dtype) * spp5_dim;
-      cache_ifs.open(cache_file_path.c_str(), ios::binary);
-      CHECK(infile.good()) << "Failed to open spp5 feature file "
+      cache_ifs.open(cache_file_path.c_str(), std::ios::binary);
+      CHECK(cache_ifs.good()) << "Failed to open spp5 feature file "
           << cache_file_path << ", which corresponds to image "
           << image.first;
       cache_ifs.read(reinterpret_cast<char*>(target_addr), read_bytes);
-      CHECK(infile.eof()) << "Error loading to open spp5 feature file "
+      CHECK(cache_ifs.eof()) << "Error loading to open spp5 feature file "
           << cache_file_path << ", which corresponds to image "
           << image.first;
       cache_ifs.close();
@@ -121,9 +121,9 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       << "  background (non-object) overlap threshold: "
       << this->layer_param_.spp_window_data_param().bg_threshold() << std::endl
       << "  foreground sampling fraction: "
-      << this->layer_param_.spp_window_data_param().fg_fraction() << std::endl;
+      << this->layer_param_.spp_window_data_param().fg_fraction() << std::endl
       << "  spp5 feature dimension: "
-      << this->layer_param_.spp_window_data_param().spp5_dim() << std::endl;
+      << this->layer_param_.spp_window_data_param().spp5_dim() << std::endl
       << "  spp5 feature cache directory: "
       << this->layer_param_.spp_window_data_param().cache_dir() << std::endl;
   cache_dir_ = this->layer_param_.spp_window_data_param().cache_dir();
