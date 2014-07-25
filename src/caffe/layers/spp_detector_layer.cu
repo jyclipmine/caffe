@@ -27,9 +27,6 @@ Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     int roi_end_h = conv_windows[4*n+2];
     int roi_end_w = conv_windows[4*n+3];
     int scale = conv_scales[n];
-    ////////
-    LOG(INFO) << "\t forwarding no. " << n << ": " << roi_start_h << ", " << roi_start_w << ", " << roi_end_h << ", " << roi_end_w << ", " << scale;
-    ///////
     // an [0 0 0 0] box marks the end of all boxes
     if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
       break;
