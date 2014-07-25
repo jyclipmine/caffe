@@ -217,7 +217,7 @@ message LayerParameter {
   optional SpatialPyramidPoolingParameter spatial_pyramid_pooling_param = 31;
   optional SPPDetectorParameter spp_detector_param = 32;
   optional NMSParameter nms_param = 33;
-  optional SPPWindowDataParameter = 34;
+  optional SPPWindowDataParameter spp_window_data_param = 34;
 
   // DEPRECATED: The layer parameters specified as a V0LayerParameter.
   // This should never be used by any code except to upgrade to the new
