@@ -42,7 +42,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   // zero out batch
   caffe_set(layer->prefetch_data_->count(), Dtype(0), top_data);
   // input file stream
-  ifstream cache_ifs;
+  std::ifstream cache_ifs;
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);
   const int num_samples[2] = { batch_size - num_fg, num_fg };
@@ -224,7 +224,6 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   // GPUs this seems to cause failures if we do not so.
   prefetch_data_->mutable_cpu_data();
   prefetch_label_->mutable_cpu_data();
-  data_mean_.cpu_data();
   DLOG(INFO) << "Initializing prefetch";
   CreatePrefetchThread();
   DLOG(INFO) << "Prefetch initialized.";
