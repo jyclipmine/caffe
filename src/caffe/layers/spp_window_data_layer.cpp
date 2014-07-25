@@ -77,9 +77,6 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
           << cache_file_path << ", which corresponds to image "
           << image.first;
       cache_ifs.read(reinterpret_cast<char*>(target_addr), read_bytes);
-      CHECK(cache_ifs.eof()) << "Error loading to open spp5 feature file "
-          << cache_file_path << ", which corresponds to image "
-          << image.first;
       cache_ifs.close();
 
       // get window label
