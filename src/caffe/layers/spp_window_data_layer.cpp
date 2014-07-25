@@ -35,7 +35,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   Dtype* top_data = layer->prefetch_data_->mutable_cpu_data();
   Dtype* top_label = layer->prefetch_label_->mutable_cpu_data();
   const int batch_size = layer->layer_param_.spp_window_data_param().batch_size();
-  const int spp5_dim = this->layer_param_.spp_window_data_param().spp5_dim();
+  const int spp5_dim = layer->layer_param_.spp_window_data_param().spp5_dim();
   const float fg_fraction =
       layer->layer_param_.spp_window_data_param().fg_fraction();
 
@@ -67,7 +67,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
       int x2 = window[SPPWindowDataLayer<Dtype>::X2];
       int y2 = window[SPPWindowDataLayer<Dtype>::Y2];
       sprintf(cache_name, "%d/%d_%d_%d_%d.spp5feat", image_index, x1, y1, x2, y2);
-      string cache_file_path = cache_dir_ + "/" + cache_name;
+      string cache_file_path = layer->cache_dir_ + "/" + cache_name;
       
       // read feature into cpu memory
       Dtype* target_addr = top_data + spp5_dim * item_id;
