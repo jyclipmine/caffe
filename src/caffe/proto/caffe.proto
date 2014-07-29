@@ -484,12 +484,16 @@ message SPPWindowDataParameter {
   optional uint32 batch_size = 3;
   // Specify diminsional of spp5 feature.
   optional uint32 spp5_dim = 4;
-  // Foreground (object) overlap threshold
-  optional float fg_threshold = 5 [default = 0.5];
-  // Background (non-object) overlap threshold
-  optional float bg_threshold = 6 [default = 0.5];
+  // Foreground (object) minimum overlap with groundtruth
+  optional float fg_overlap_min = 5 [default = 0.5];
+  // Foreground (object) maximum overlap with groundtruth
+  optional float fg_overlap_max = 6 [default = 1];
+  // Background (non-object) minimum overlap with groundtruth
+  optional float bg_overlap_min = 7 [default = 0];
+    // Background (non-object) maximum overlap with groundtruth
+  optional float bg_overlap_max = 8 [default = 0.5];
   // Fraction of batch that should be foreground objects
-  optional float fg_fraction = 7 [default = 0.25];
+  optional float fg_fraction = 9 [default = 0.25];
 }
 
 // Message that stores parameters used by PowerLayer

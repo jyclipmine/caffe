@@ -113,10 +113,14 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   //    class_index overlap x1 y1 x2 y2
 
   LOG(INFO) << "SPPWindowData layer:" << std::endl
-      << "  foreground (object) overlap threshold: "
-      << this->layer_param_.spp_window_data_param().fg_threshold() << std::endl
-      << "  background (non-object) overlap threshold: "
-      << this->layer_param_.spp_window_data_param().bg_threshold() << std::endl
+      << "  foreground (object) minimum overlap with groundtruth: "
+      << this->layer_param_.spp_window_data_param().fg_overlap_min() << std::endl
+      << "  foreground (object) maximum overlap with groundtruth: "
+      << this->layer_param_.spp_window_data_param().fg_overlap_max() << std::endl
+      << "  background (non-object) minimum overlap with groundtruth: "
+      << this->layer_param_.spp_window_data_param().bg_overlap_min() << std::endl
+      << "  background (non-object) maximum overlap with groundtruth: "
+      << this->layer_param_.spp_window_data_param().bg_overlap_max() << std::endl
       << "  foreground sampling fraction: "
       << this->layer_param_.spp_window_data_param().fg_fraction() << std::endl
       << "  spp5 feature dimension: "
@@ -150,10 +154,15 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     // read each box
     int num_windows;
     infile >> num_windows;
-    const float fg_threshold =
-        this->layer_param_.spp_window_data_param().fg_threshold();
-    const float bg_threshold =
-        this->layer_param_.spp_window_data_param().bg_threshold();
+    const float fg_overlap_min =
+        this->layer_param_.spp_window_data_param().fg_overlap_min();
+    const float fg_overlap_max =
+        this->layer_param_.spp_window_data_param().fg_overlap_max();
+        
+    const float bg_overlap_min =
+        this->layer_param_.spp_window_data_param().bg_overlap_min();
+    const float bg_overlap_max =
+        this->layer_param_.spp_window_data_param().bg_overlap_max();
     for (int i = 0; i < num_windows; ++i) {
       int label, x1, y1, x2, y2;
       float overlap;
@@ -169,13 +178,13 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       window[SPPWindowDataLayer::Y2] = y2;
 
       // add window to foreground list or background list
-      if (overlap >= fg_threshold) {
+      if (overlap >= fg_overlap_min && overlap <= fg_overlap_max) {
         int label = window[SPPWindowDataLayer::LABEL];
         CHECK_GT(label, 0);
         fg_windows_.push_back(window);
         label_hist.insert(std::make_pair(label, 0));
         label_hist[label]++;
-      } else if (overlap < bg_threshold) {
+      } else if (overlap >= bg_overlap_min && overlap < bg_overlap_max) {
         // background window, force label and overlap to 0
         window[SPPWindowDataLayer::LABEL] = 0;
         window[SPPWindowDataLayer::OVERLAP] = 0;
