@@ -34,8 +34,7 @@ def _Net_params(self):
     return OrderedDict([(lr.name, lr.blobs) for lr in self.layers
                         if len(lr.blobs) > 0])
 
-
-def _Net_forward(self, blobs=None, **kwargs):
+def _Net_forward(self, blobs=None, start=None, end=None, **kwargs):
     """
     Forward pass: prepare inputs and run the net forward.
 
@@ -44,6 +43,8 @@ def _Net_forward(self, blobs=None, **kwargs):
     kwargs: Keys are input blob names and values are blob ndarrays.
             For formatting inputs for Caffe, see Net.preprocess().
             If None, input is taken from data layers.
+    start: optional name of layer at which to begin the forward pass
+    end: optional name of layer at which to finish the forward pass (inclusive)
 
     Give
     outs: {blob name: blob ndarray} dict.
@@ -51,26 +52,37 @@ def _Net_forward(self, blobs=None, **kwargs):
     if blobs is None:
         blobs = []
 
+    if start is not None:
+        start_ind = [lr.name for lr in self.layers].index(start)
+    else:
+        start_ind = 0
+
+    if end is not None:
+        end_ind = [lr.name for lr in self.layers].index(end)
+        outputs = set([end] + blobs)
+    else:
+        end_ind = len(self.layers) - 1
+        outputs = set(self.outputs + blobs)
+
     if kwargs:
         if set(kwargs.keys()) != set(self.inputs):
             raise Exception('Input blob arguments do not match net inputs.')
         # Set input according to defined shapes and make arrays single and
         # C-contiguous as Caffe expects.
         for in_, blob in kwargs.iteritems():
-            if blob.shape[0] != self.blobs[in_].num:
-                raise Exception('Input is not batch sized')
             if blob.ndim != 4:
                 raise Exception('{} blob is not 4-d'.format(in_))
+            if blob.shape[0] != self.blobs[in_].num:
+                raise Exception('Input is not batch sized')
             self.blobs[in_].data[...] = blob
 
-    self._forward()
+    self._forward(start_ind, end_ind)
 
     # Unpack blobs to extract
-    outs = {out: self.blobs[out].data for out in set(self.outputs + blobs)}
-    return outs
+    return {out: self.blobs[out].data for out in outputs}
 
 
-def _Net_backward(self, diffs=None, **kwargs):
+def _Net_backward(self, diffs=None, start=None, end=None, **kwargs):
     """
     Backward pass: prepare diffs and run the net backward.
 
@@ -78,6 +90,8 @@ def _Net_backward(self, diffs=None, **kwargs):
     diffs: list of diffs to return in addition to bottom diffs.
     kwargs: Keys are output blob names and values are diff ndarrays.
             If None, top diffs are taken from forward loss.
+    start: optional name of layer at which to begin the backward pass
+    end: optional name of layer at which to finish the backward pass (inclusive)
 
     Give
     outs: {blob name: diff ndarray} dict.
@@ -85,23 +99,34 @@ def _Net_backward(self, diffs=None, **kwargs):
     if diffs is None:
         diffs = []
 
+    if start is not None:
+        start_ind = [lr.name for lr in self.layers].index(start)
+    else:
+        start_ind = len(self.layers) - 1
+
+    if end is not None:
+        end_ind = [lr.name for lr in self.layers].index(end)
+        outputs = set([end] + diffs)
+    else:
+        end_ind = 0
+        outputs = set(self.inputs + diffs)
+
     if kwargs:
         if set(kwargs.keys()) != set(self.outputs):
             raise Exception('Top diff arguments do not match net outputs.')
         # Set top diffs according to defined shapes and make arrays single and
         # C-contiguous as Caffe expects.
         for top, diff in kwargs.iteritems():
-            if diff.shape[0] != self.blobs[top].num:
-                raise Exception('Diff is not batch sized')
             if diff.ndim != 4:
                 raise Exception('{} diff is not 4-d'.format(top))
+            if diff.shape[0] != self.blobs[top].num:
+                raise Exception('Diff is not batch sized')
             self.blobs[top].diff[...] = diff
 
-    self._backward()
+    self._backward(start_ind, end_ind)
 
     # Unpack diffs to extract
-    outs = {out: self.blobs[out].diff for out in set(self.inputs + diffs)}
-    return outs
+    return {out: self.blobs[out].diff for out in outputs}
 
 
 def _Net_forward_all(self, blobs=None, **kwargs):
@@ -259,17 +284,16 @@ def _Net_preprocess(self, input_name, input_):
     caffe_in = input_.astype(np.float32)
     input_scale = self.input_scale.get(input_name)
     channel_order = self.channel_swap.get(input_name)
-    mean = self.mean.get(input_name)
     in_size = self.blobs[input_name].data.shape[2:]
     if caffe_in.shape[:2] != in_size:
         caffe_in = caffe.io.resize_image(caffe_in, in_size)
-    if input_scale:
+    if input_scale is not None:
         caffe_in *= input_scale
-    if channel_order:
+    if channel_order is not None:
         caffe_in = caffe_in[:, :, channel_order]
     caffe_in = caffe_in.transpose((2, 0, 1))
-    if mean is not None:
-        caffe_in -= mean
+    if hasattr(self, 'mean'):
+        caffe_in -= self.mean.get(input_name, 0)
     return caffe_in
 
 
@@ -280,15 +304,14 @@ def _Net_deprocess(self, input_name, input_):
     decaf_in = input_.copy().squeeze()
     input_scale = self.input_scale.get(input_name)
     channel_order = self.channel_swap.get(input_name)
-    mean = self.mean.get(input_name)
-    if mean is not None:
-        decaf_in += mean
+    if hasattr(self, 'mean'):
+        decaf_in += self.mean.get(input_name, 0)
     decaf_in = decaf_in.transpose((1,2,0))
-    if channel_order:
+    if channel_order is not None:
         channel_order_inverse = [channel_order.index(i)
                                  for i in range(decaf_in.shape[2])]
         decaf_in = decaf_in[:, :, channel_order_inverse]
-    if input_scale:
+    if input_scale is not None:
         decaf_in /= input_scale
     return decaf_in
 

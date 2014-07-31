@@ -1,17 +1,29 @@
 // Copyright 2014 BVLC and contributors.
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <cstdio>
 #include <ctime>
 
 #include "caffe/common.hpp"
 #include "caffe/util/rng.hpp"
 
+// gflags 2.1 issue: namespace google was changed to gflags without warning.
+// Luckily we will be able to use GFLAGS_GFAGS_H_ to detect if it is version
+// 2.1. If yes , we will add a temporary solution to redirect the namespace.
+// TODO(Yangqing): Once gflags solves the problem in a more elegant way, let's
+// remove the following hack.
+#ifdef GFLAGS_GFLAGS_H_
+namespace google {
+using ::gflags::ParseCommandLineFlags;
+}  // namespace google
+#endif  // GFLAGS_GFLAGS_H_
+
 namespace caffe {
 
 shared_ptr<Caffe> Caffe::singleton_;
 
-
-// curand seeding
+// random seeding
 int64_t cluster_seedgen(void) {
   int64_t s, seed, pid;
   pid = getpid();
@@ -20,6 +32,58 @@ int64_t cluster_seedgen(void) {
   return seed;
 }
 
+
+void GlobalInit(int* pargc, char*** pargv) {
+  // Google flags.
+  ::google::ParseCommandLineFlags(pargc, pargv, true);
+  // Google logging.
+  ::google::InitGoogleLogging(*(pargv)[0]);
+}
+
+#ifdef CPU_ONLY  // CPU-only Caffe.
+
+Caffe::Caffe()
+    : random_generator_(), mode_(Caffe::CPU), phase_(Caffe::TRAIN) { }
+
+Caffe::~Caffe() { }
+
+void Caffe::set_random_seed(const unsigned int seed) {
+  // RNG seed
+  Get().random_generator_.reset(new RNG(seed));
+}
+
+void Caffe::SetDevice(const int device_id) {
+  NO_GPU;
+}
+
+void Caffe::DeviceQuery() {
+  NO_GPU;
+}
+
+
+class Caffe::RNG::Generator {
+ public:
+  Generator() : rng_(new caffe::rng_t(cluster_seedgen())) {}
+  explicit Generator(unsigned int seed) : rng_(new caffe::rng_t(seed)) {}
+  caffe::rng_t* rng() { return rng_.get(); }
+ private:
+  shared_ptr<caffe::rng_t> rng_;
+};
+
+Caffe::RNG::RNG() : generator_(new Generator()) { }
+
+Caffe::RNG::RNG(unsigned int seed) : generator_(new Generator(seed)) { }
+
+Caffe::RNG& Caffe::RNG::operator=(const RNG& other) {
+  generator_.reset(other.generator_.get());
+  return *this;
+}
+
+void* Caffe::RNG::generator() {
+  return static_cast<void*>(generator_->rng());
+}
+
+#else  // Normal GPU + CPU Caffe.
 
 Caffe::Caffe()
     : cublas_handle_(NULL), curand_generator_(NULL), random_generator_(),
@@ -95,28 +159,30 @@ void Caffe::DeviceQuery() {
     return;
   }
   CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
-  printf("Device id:                     %d\n", device);
-  printf("Major revision number:         %d\n", prop.major);
-  printf("Minor revision number:         %d\n", prop.minor);
-  printf("Name:                          %s\n", prop.name);
-  printf("Total global memory:           %lu\n", prop.totalGlobalMem);
-  printf("Total shared memory per block: %lu\n", prop.sharedMemPerBlock);
-  printf("Total registers per block:     %d\n", prop.regsPerBlock);
-  printf("Warp size:                     %d\n", prop.warpSize);
-  printf("Maximum memory pitch:          %lu\n", prop.memPitch);
-  printf("Maximum threads per block:     %d\n", prop.maxThreadsPerBlock);
-  printf("Maximum dimension of block:    %d, %d, %d\n",
-      prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
-  printf("Maximum dimension of grid:     %d, %d, %d\n",
-      prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
-  printf("Clock rate:                    %d\n", prop.clockRate);
-  printf("Total constant memory:         %lu\n", prop.totalConstMem);
-  printf("Texture alignment:             %lu\n", prop.textureAlignment);
-  printf("Concurrent copy and execution: %s\n",
-      (prop.deviceOverlap ? "Yes" : "No"));
-  printf("Number of multiprocessors:     %d\n", prop.multiProcessorCount);
-  printf("Kernel execution timeout:      %s\n",
-      (prop.kernelExecTimeoutEnabled ? "Yes" : "No"));
+  LOG(INFO) << "Device id:                     " << device;
+  LOG(INFO) << "Major revision number:         " << prop.major;
+  LOG(INFO) << "Minor revision number:         " << prop.minor;
+  LOG(INFO) << "Name:                          " << prop.name;
+  LOG(INFO) << "Total global memory:           " << prop.totalGlobalMem;
+  LOG(INFO) << "Total shared memory per block: " << prop.sharedMemPerBlock;
+  LOG(INFO) << "Total registers per block:     " << prop.regsPerBlock;
+  LOG(INFO) << "Warp size:                     " << prop.warpSize;
+  LOG(INFO) << "Maximum memory pitch:          " << prop.memPitch;
+  LOG(INFO) << "Maximum threads per block:     " << prop.maxThreadsPerBlock;
+  LOG(INFO) << "Maximum dimension of block:    "
+      << prop.maxThreadsDim[0] << ", " << prop.maxThreadsDim[1] << ", "
+      << prop.maxThreadsDim[2];
+  LOG(INFO) << "Maximum dimension of grid:     "
+      << prop.maxGridSize[0] << ", " << prop.maxGridSize[1] << ", "
+      << prop.maxGridSize[2];
+  LOG(INFO) << "Clock rate:                    " << prop.clockRate;
+  LOG(INFO) << "Total constant memory:         " << prop.totalConstMem;
+  LOG(INFO) << "Texture alignment:             " << prop.textureAlignment;
+  LOG(INFO) << "Concurrent copy and execution: "
+      << (prop.deviceOverlap ? "Yes" : "No");
+  LOG(INFO) << "Number of multiprocessors:     " << prop.multiProcessorCount;
+  LOG(INFO) << "Kernel execution timeout:      "
+      << (prop.kernelExecTimeoutEnabled ? "Yes" : "No");
   return;
 }
 
@@ -200,5 +266,7 @@ const char* curandGetErrorString(curandStatus_t error) {
   }
   return "Unknown curand status";
 }
+
+#endif  // CPU_ONLY
 
 }  // namespace caffe

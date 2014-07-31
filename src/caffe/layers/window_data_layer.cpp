@@ -3,7 +3,6 @@
 // Based on data_layer.cpp by Yangqing Jia.
 
 #include <stdint.h>
-#include <pthread.h>
 
 #include <algorithm>
 #include <string>
@@ -22,44 +21,38 @@
 #include "caffe/util/rng.hpp"
 #include "caffe/vision_layers.hpp"
 
-using std::string;
-using std::map;
-using std::pair;
-
 // caffe.proto > LayerParameter > WindowDataParameter
 //   'source' field specifies the window_file
 //   'crop_size' indicates the desired warped size
 
 namespace caffe {
 
+// Thread fetching the data
 template <typename Dtype>
-void* WindowDataLayerPrefetch(void* layer_pointer) {
-  WindowDataLayer<Dtype>* layer =
-      reinterpret_cast<WindowDataLayer<Dtype>*>(layer_pointer);
-
+void WindowDataLayer<Dtype>::InternalThreadEntry() {
   // At each iteration, sample N windows where N*p are foreground (object)
   // windows and N*(1-p) are background (non-object) windows
 
-  Dtype* top_data = layer->prefetch_data_->mutable_cpu_data();
-  Dtype* top_label = layer->prefetch_label_->mutable_cpu_data();
-  const Dtype scale = layer->layer_param_.window_data_param().scale();
-  const int batch_size = layer->layer_param_.window_data_param().batch_size();
-  const int crop_size = layer->layer_param_.window_data_param().crop_size();
-  const int context_pad = layer->layer_param_.window_data_param().context_pad();
-  const bool mirror = layer->layer_param_.window_data_param().mirror();
+  Dtype* top_data = prefetch_data_.mutable_cpu_data();
+  Dtype* top_label = prefetch_label_.mutable_cpu_data();
+  const Dtype scale = this->layer_param_.window_data_param().scale();
+  const int batch_size = this->layer_param_.window_data_param().batch_size();
+  const int crop_size = this->layer_param_.window_data_param().crop_size();
+  const int context_pad = this->layer_param_.window_data_param().context_pad();
+  const bool mirror = this->layer_param_.window_data_param().mirror();
   const float fg_fraction =
-      layer->layer_param_.window_data_param().fg_fraction();
-  const Dtype* mean = layer->data_mean_.cpu_data();
-  const int mean_off = (layer->data_mean_.width() - crop_size) / 2;
-  const int mean_width = layer->data_mean_.width();
-  const int mean_height = layer->data_mean_.height();
+      this->layer_param_.window_data_param().fg_fraction();
+  const Dtype* mean = data_mean_.cpu_data();
+  const int mean_off = (data_mean_.width() - crop_size) / 2;
+  const int mean_width = data_mean_.width();
+  const int mean_height = data_mean_.height();
   cv::Size cv_crop_size(crop_size, crop_size);
-  const string& crop_mode = layer->layer_param_.window_data_param().crop_mode();
+  const string& crop_mode = this->layer_param_.window_data_param().crop_mode();
 
   bool use_square = (crop_mode == "square") ? true : false;
 
   // zero out batch
-  caffe_set(layer->prefetch_data_->count(), Dtype(0), top_data);
+  caffe_set(prefetch_data_.count(), Dtype(0), top_data);
 
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);
@@ -70,24 +63,24 @@ void* WindowDataLayerPrefetch(void* layer_pointer) {
   for (int is_fg = 0; is_fg < 2; ++is_fg) {
     for (int dummy = 0; dummy < num_samples[is_fg]; ++dummy) {
       // sample a window
-      const unsigned int rand_index = layer->PrefetchRand();
+      const unsigned int rand_index = PrefetchRand();
       vector<float> window = (is_fg) ?
-          layer->fg_windows_[rand_index % layer->fg_windows_.size()] :
-          layer->bg_windows_[rand_index % layer->bg_windows_.size()];
+          fg_windows_[rand_index % fg_windows_.size()] :
+          bg_windows_[rand_index % bg_windows_.size()];
 
       bool do_mirror = false;
-      if (mirror && layer->PrefetchRand() % 2) {
+      if (mirror && PrefetchRand() % 2) {
         do_mirror = true;
       }
 
       // load the image containing the window
       pair<std::string, vector<int> > image =
-          layer->image_database_[window[WindowDataLayer<Dtype>::IMAGE_INDEX]];
+          image_database_[window[WindowDataLayer<Dtype>::IMAGE_INDEX]];
 
       cv::Mat cv_img = cv::imread(image.first, CV_LOAD_IMAGE_COLOR);
       if (!cv_img.data) {
         LOG(ERROR) << "Could not open or find file " << image.first;
-        return reinterpret_cast<void*>(NULL);
+        return;
       }
       const int channels = cv_img.channels();
 
@@ -214,7 +207,7 @@ void* WindowDataLayerPrefetch(void* layer_pointer) {
       // useful debugging code for dumping transformed windows to disk
       string file_id;
       std::stringstream ss;
-      ss << layer->PrefetchRand();
+      ss << PrefetchRand();
       ss >> file_id;
       std::ofstream inf((string("dump/") + file_id +
           string("_info.txt")).c_str(), std::ofstream::out);
@@ -246,8 +239,6 @@ void* WindowDataLayerPrefetch(void* layer_pointer) {
       item_id++;
     }
   }
-
-  return reinterpret_cast<void*>(NULL);
 }
 
 template <typename Dtype>
@@ -371,16 +362,14 @@ void WindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   CHECK_GT(crop_size, 0);
   const int batch_size = this->layer_param_.window_data_param().batch_size();
   (*top)[0]->Reshape(batch_size, channels, crop_size, crop_size);
-  prefetch_data_.reset(
-      new Blob<Dtype>(batch_size, channels, crop_size, crop_size));
+  prefetch_data_.Reshape(batch_size, channels, crop_size, crop_size);
 
   LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
       << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
       << (*top)[0]->width();
   // label
   (*top)[1]->Reshape(batch_size, 1, 1, 1);
-  prefetch_label_.reset(
-      new Blob<Dtype>(batch_size, 1, 1, 1));
+  prefetch_label_.Reshape(batch_size, 1, 1, 1);
 
   // check if we want to have mean
   if (this->layer_param_.window_data_param().has_mean_file()) {
@@ -401,8 +390,8 @@ void WindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   // cpu_data calls so that the prefetch thread does not accidentally make
   // simultaneous cudaMalloc calls when the main thread is running. In some
   // GPUs this seems to cause failures if we do not so.
-  prefetch_data_->mutable_cpu_data();
-  prefetch_label_->mutable_cpu_data();
+  prefetch_data_.mutable_cpu_data();
+  prefetch_label_.mutable_cpu_data();
   data_mean_.cpu_data();
   DLOG(INFO) << "Initializing prefetch";
   CreatePrefetchThread();
@@ -421,13 +410,12 @@ void WindowDataLayer<Dtype>::CreatePrefetchThread() {
     prefetch_rng_.reset();
   }
   // Create the thread.
-  CHECK(!pthread_create(&thread_, NULL, WindowDataLayerPrefetch<Dtype>,
-        static_cast<void*>(this))) << "Pthread execution failed.";
+  CHECK(!StartInternalThread()) << "Pthread execution failed.";
 }
 
 template <typename Dtype>
 void WindowDataLayer<Dtype>::JoinPrefetchThread() {
-  CHECK(!pthread_join(thread_, NULL)) << "Pthread joining failed.";
+  CHECK(!WaitForInternalThreadToExit()) << "Pthread joining failed.";
 }
 
 template <typename Dtype>
@@ -444,14 +432,18 @@ Dtype WindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // First, join the thread
   JoinPrefetchThread();
   // Copy the data
-  caffe_copy(prefetch_data_->count(), prefetch_data_->cpu_data(),
+  caffe_copy(prefetch_data_.count(), prefetch_data_.cpu_data(),
              (*top)[0]->mutable_cpu_data());
-  caffe_copy(prefetch_label_->count(), prefetch_label_->cpu_data(),
+  caffe_copy(prefetch_label_.count(), prefetch_label_.cpu_data(),
              (*top)[1]->mutable_cpu_data());
   // Start a new prefetch thread
   CreatePrefetchThread();
   return Dtype(0.);
 }
+
+#ifdef CPU_ONLY
+STUB_GPU_FORWARD(WindowDataLayer, Forward);
+#endif
 
 INSTANTIATE_CLASS(WindowDataLayer);
 

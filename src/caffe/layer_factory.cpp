@@ -9,10 +9,7 @@
 #include "caffe/vision_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
 
-using std::string;
-
 namespace caffe {
-
 
 // A function to get a specific layer from the specification given in
 // LayerParameter. Ideally this would be replaced by a factory pattern,
@@ -78,6 +75,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new SigmoidLayer<Dtype>(param);
   case LayerParameter_LayerType_SIGMOID_CROSS_ENTROPY_LOSS:
     return new SigmoidCrossEntropyLossLayer<Dtype>(param);
+  case LayerParameter_LayerType_SLICE:
+    return new SliceLayer<Dtype>(param);
   case LayerParameter_LayerType_SOFTMAX:
     return new SoftmaxLayer<Dtype>(param);
   case LayerParameter_LayerType_SOFTMAX_LOSS:

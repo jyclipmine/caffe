@@ -14,14 +14,7 @@
 #include "caffe/layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
-using std::map;
-using std::pair;
-using std::set;
-using std::string;
-using std::vector;
-
 namespace caffe {
-
 
 template <typename Dtype>
 class Net {
@@ -36,6 +29,16 @@ class Net {
   // Run forward with the input blobs already fed separately. You can get the
   // input blobs using input_blobs().
   const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL);
+
+  // The From and To variants of Forward and Backward operate on the
+  // (topological) ordering by which the net is specified. For general DAG
+  // networks, note that (1) computing from one layer to another might entail
+  // extra computation on unrelated branches, and (2) computation starting in
+  // the middle may be incorrect if all of the layers of a fan-in are not
+  // included.
+  Dtype ForwardFromTo(int start, int end);
+  Dtype ForwardFrom(int start);
+  Dtype ForwardTo(int end);
   // Run forward using a set of bottom blobs, and return the result.
   const vector<Blob<Dtype>*>& Forward(const vector<Blob<Dtype>* > & bottom,
       Dtype* loss = NULL);
@@ -47,6 +50,9 @@ class Net {
   // computes the gradient w.r.t the parameters, and the data has already
   // been provided during the forward pass.
   void Backward();
+  void BackwardFromTo(int start, int end);
+  void BackwardFrom(int start);
+  void BackwardTo(int end);
 
   Dtype ForwardBackward(const vector<Blob<Dtype>* > & bottom) {
     Dtype loss;
@@ -89,8 +95,9 @@ class Net {
   // returns the parameters
   inline vector<shared_ptr<Blob<Dtype> > >& params() { return params_; }
   // returns the parameter learning rate multipliers
-  inline vector<float>& params_lr() {return params_lr_; }
+  inline vector<float>& params_lr() { return params_lr_; }
   inline vector<float>& params_weight_decay() { return params_weight_decay_; }
+  const map<string, int>& param_names_index() { return param_names_index_; }
   // Input and output blob numbers
   inline int num_inputs() { return net_input_blobs_.size(); }
   inline int num_outputs() { return net_output_blobs_.size(); }
@@ -105,7 +112,16 @@ class Net {
   const shared_ptr<Blob<Dtype> > blob_by_name(const string& blob_name);
   bool has_layer(const string& layer_name);
   const shared_ptr<Layer<Dtype> > layer_by_name(const string& layer_name);
-  const map<string, int>& param_names_index() { return param_names_index_; }
+
+  void set_debug_info(const bool value) { debug_info_ = value; }
+
+  // Helpers for Init.
+  // Remove layers that the user specified should be excluded given the current
+  // phase, level, and stage.
+  static void FilterNet(const NetParameter& param,
+      NetParameter* param_filtered);
+  static bool StateMeetsRule(const NetState& state, const NetStateRule& rule,
+      const string& layer_name);
 
  protected:
   // Helpers for Init.
@@ -119,6 +135,12 @@ class Net {
                    map<string, int>* blob_name_to_idx);
   void AppendParam(const NetParameter& param, const int layer_id,
                    const int param_id);
+
+  // Helpers for displaying debug info.
+  void ForwardDebugInfo(const int layer_id);
+  void BackwardDebugInfo(const int layer_id);
+  void UpdateDebugInfo(const int param_id);
+
   // Function to get misc parameters, e.g. the learning rate multiplier and
   // weight decay.
   void GetLearningRateAndWeightDecay();
@@ -144,7 +166,8 @@ class Net {
   vector<vector<Blob<Dtype>*> > top_vecs_;
   vector<vector<int> > top_id_vecs_;
   vector<int> param_owners_;
-  vector<pair<int, int> > layer_param_indices_;
+  vector<string> param_display_names_;
+  vector<pair<int, int> > param_layer_indices_;
   map<string, int> param_names_index_;
   // blob indices for the input and the output of the net
   vector<int> net_input_blob_indices_;
@@ -160,6 +183,9 @@ class Net {
   vector<float> params_weight_decay_;
   // The bytes of memory used by this net
   size_t memory_used_;
+  // Whether to compute and display debug info for the net.
+  bool debug_info_;
+
   DISABLE_COPY_AND_ASSIGN(Net);
 };
 

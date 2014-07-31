@@ -12,7 +12,6 @@
 #include "caffe/vision_layers.hpp"
 
 namespace caffe {
-using std::vector;
 
 template <typename Dtype>
 HDF5OutputLayer<Dtype>::HDF5OutputLayer(const LayerParameter& param)
@@ -56,7 +55,7 @@ Dtype HDF5OutputLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   for (int i = 0; i < bottom[0]->num(); ++i) {
     caffe_copy(data_datum_dim, &bottom[0]->cpu_data()[i * data_datum_dim],
         &data_blob_.mutable_cpu_data()[i * data_datum_dim]);
-    caffe_copy(label_datum_dim, &bottom[0]->cpu_data()[i * label_datum_dim],
+    caffe_copy(label_datum_dim, &bottom[1]->cpu_data()[i * label_datum_dim],
         &label_blob_.mutable_cpu_data()[i * label_datum_dim]);
   }
   SaveBlobs();
@@ -68,6 +67,10 @@ void HDF5OutputLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
   return;
 }
+
+#ifdef CPU_ONLY
+STUB_GPU(HDF5OutputLayer);
+#endif
 
 INSTANTIATE_CLASS(HDF5OutputLayer);
 

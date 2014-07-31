@@ -14,10 +14,14 @@
 
 #include "caffe/test/test_caffe_main.hpp"
 
+using std::ostringstream;
+
 namespace caffe {
 
-template <typename Dtype>
-class NetTest : public ::testing::Test {
+template <typename TypeParam>
+class NetTest : public MultiDeviceTest<TypeParam> {
+  typedef typename TypeParam::Dtype Dtype;
+
  protected:
   NetTest() : seed_(1701) {}
 
@@ -214,8 +218,11 @@ class NetTest : public ::testing::Test {
     InitNetFromProtoString(proto);
   }
 
-  virtual void InitUnsharedWeightsNet() {
-    const string& proto =
+  virtual void InitUnsharedWeightsNet(const bool bias_term = false,
+      const Dtype blobs_lr_w1 = 1, const Dtype blobs_lr_b1 = 2,
+      const Dtype blobs_lr_w2 = 1, const Dtype blobs_lr_b2 = 2) {
+    ostringstream proto;
+    proto <<
         "name: 'UnsharedWeightsNetwork' "
         "layers: { "
         "  name: 'data' "
@@ -234,16 +241,25 @@ class NetTest : public ::testing::Test {
         "} "
         "layers: { "
         "  name: 'innerproduct1' "
-        "  type: INNER_PRODUCT "
+       "  type: INNER_PRODUCT "
         "  inner_product_param { "
         "    num_output: 10 "
-        "    bias_term: false "
+        "    bias_term: " << bias_term <<
         "    weight_filler { "
         "      type: 'gaussian' "
         "      std: 10 "
         "    } "
         "  } "
-        "  param: 'unsharedweights1' "
+        "  param: 'unsharedweights1' ";
+    if (bias_term) {
+      proto << "  param: '' ";
+    }
+    proto <<
+        "  blobs_lr: " << blobs_lr_w1;
+    if (bias_term) {
+      proto << "  blobs_lr: " << blobs_lr_b1;
+    }
+    proto <<
         "  bottom: 'data' "
         "  top: 'innerproduct1' "
         "} "
@@ -252,14 +268,23 @@ class NetTest : public ::testing::Test {
         "  type: INNER_PRODUCT "
         "  inner_product_param { "
         "    num_output: 10 "
-        "    bias_term: false "
+        "    bias_term: " << bias_term <<
         "    weight_filler { "
         "      type: 'gaussian' "
         "      std: 10 "
         "    } "
         "  } "
-        "  param: 'unsharedweights2' "
+        "  param: 'unsharedweights2' ";
+    if (bias_term) {
+      proto << "  param: '' ";
+    }
+    proto <<
         "  bottom: 'data' "
+        "  blobs_lr: " << blobs_lr_w2;
+    if (bias_term) {
+      proto << "  blobs_lr: " << blobs_lr_b2;
+    }
+    proto <<
         "  top: 'innerproduct2' "
         "} "
         "layers: { "
@@ -268,7 +293,7 @@ class NetTest : public ::testing::Test {
         "  bottom: 'innerproduct1' "
         "  bottom: 'innerproduct2' "
         "} ";
-    InitNetFromProtoString(proto);
+    InitNetFromProtoString(proto.str());
   }
 
   virtual void InitSharedWeightsNet() {
@@ -456,8 +481,7 @@ class NetTest : public ::testing::Test {
   shared_ptr<Net<Dtype> > net_;
 };
 
-typedef ::testing::Types<float, double> Dtypes;
-TYPED_TEST_CASE(NetTest, Dtypes);
+TYPED_TEST_CASE(NetTest, TestDtypesAndDevices);
 
 TYPED_TEST(NetTest, TestHasBlob) {
   this->InitTinyNet();
@@ -507,6 +531,7 @@ TYPED_TEST(NetTest, TestBottomNeedBackward) {
 }
 
 TYPED_TEST(NetTest, TestBottomNeedBackwardForce) {
+  typedef typename TypeParam::Dtype Dtype;
   const bool force_backward = true;
   this->InitTinyNet(force_backward);
   const vector<vector<bool> >& bottom_need_backward =
@@ -521,6 +546,7 @@ TYPED_TEST(NetTest, TestBottomNeedBackwardForce) {
 }
 
 TYPED_TEST(NetTest, TestBottomNeedBackwardEuclideanForce) {
+  typedef typename TypeParam::Dtype Dtype;
   const bool force_backward = true;
   this->InitTinyNetEuclidean(force_backward);
   const vector<vector<bool> >& bottom_need_backward =
@@ -553,32 +579,35 @@ TYPED_TEST(NetTest, TestBottomNeedBackwardTricky) {
 }
 
 TYPED_TEST(NetTest, TestUnsharedWeightsDataNet) {
+  typedef typename TypeParam::Dtype Dtype;
   this->InitUnsharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
-  TypeParam loss;
+  vector<Blob<Dtype>*> bottom;
+  Dtype loss;
   this->net_->Forward(bottom, &loss);
   EXPECT_GT(loss, 0);
 }
 
 TYPED_TEST(NetTest, TestSharedWeightsDataNet) {
+  typedef typename TypeParam::Dtype Dtype;
   this->InitSharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
-  TypeParam loss;
+  vector<Blob<Dtype>*> bottom;
+  Dtype loss;
   this->net_->Forward(bottom, &loss);
   EXPECT_FLOAT_EQ(loss, 0);
 }
 
 TYPED_TEST(NetTest, TestUnsharedWeightsDiffNet) {
+  typedef typename TypeParam::Dtype Dtype;
   this->InitUnsharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
-  Net<TypeParam>* net = this->net_.get();
+  vector<Blob<Dtype>*> bottom;
+  Net<Dtype>* net = this->net_.get();
   net->Forward(bottom);
   net->Backward();
-  Layer<TypeParam>* ip1_layer = net->layer_by_name("innerproduct1").get();
-  Layer<TypeParam>* ip2_layer = net->layer_by_name("innerproduct2").get();
+  Layer<Dtype>* ip1_layer = net->layer_by_name("innerproduct1").get();
+  Layer<Dtype>* ip2_layer = net->layer_by_name("innerproduct2").get();
   const int count = ip1_layer->blobs()[0]->count();
-  const TypeParam* grad1 = ip1_layer->blobs()[0]->cpu_diff();
-  const TypeParam* grad2 = ip2_layer->blobs()[0]->cpu_diff();
+  const Dtype* grad1 = ip1_layer->blobs()[0]->cpu_diff();
+  const Dtype* grad2 = ip2_layer->blobs()[0]->cpu_diff();
   for (int i = 0; i < count; ++i) {
     EXPECT_GT(fabs(grad1[i]), 0);
     EXPECT_FLOAT_EQ(-1 * grad1[i], grad2[i]);
@@ -586,33 +615,34 @@ TYPED_TEST(NetTest, TestUnsharedWeightsDiffNet) {
 }
 
 TYPED_TEST(NetTest, TestSharedWeightsDiffNet) {
+  typedef typename TypeParam::Dtype Dtype;
   this->InitSharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
-  Net<TypeParam>* net = this->net_.get();
-  TypeParam loss;
+  vector<Blob<Dtype>*> bottom;
+  Net<Dtype>* net = this->net_.get();
+  Dtype loss;
   net->Forward(bottom, &loss);
   net->Backward();
   EXPECT_FLOAT_EQ(loss, 0);
-  Layer<TypeParam>* ip1_layer = net->layer_by_name("innerproduct1").get();
-  Layer<TypeParam>* ip2_layer = net->layer_by_name("innerproduct2").get();
+  Layer<Dtype>* ip1_layer = net->layer_by_name("innerproduct1").get();
+  Layer<Dtype>* ip2_layer = net->layer_by_name("innerproduct2").get();
   const int count = ip1_layer->blobs()[0]->count();
-  const TypeParam* grad1 = ip1_layer->blobs()[0]->cpu_diff();
-  const TypeParam* grad2 = ip2_layer->blobs()[0]->cpu_diff();
+  const Dtype* grad1 = ip1_layer->blobs()[0]->cpu_diff();
+  const Dtype* grad2 = ip2_layer->blobs()[0]->cpu_diff();
   for (int i = 0; i < count; ++i) {
     EXPECT_FLOAT_EQ(0, grad1[i]);
     EXPECT_FLOAT_EQ(0, grad2[i]);
   }
 }
 
-TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
+TYPED_TEST(NetTest, TestSharedWeightsUpdate) {
+  typedef typename TypeParam::Dtype Dtype;
   Caffe::set_random_seed(this->seed_);
-  Caffe::set_mode(Caffe::CPU);
   this->InitDiffDataSharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
+  vector<Blob<Dtype>*> bottom;
   EXPECT_EQ(this->net_->layer_names()[1], "innerproduct1");
   EXPECT_EQ(this->net_->layer_names()[2], "innerproduct2");
-  Blob<TypeParam>* ip1_weights = this->net_->layers()[1]->blobs()[0].get();
-  Blob<TypeParam>* ip2_weights = this->net_->layers()[2]->blobs()[0].get();
+  Blob<Dtype>* ip1_weights = this->net_->layers()[1]->blobs()[0].get();
+  Blob<Dtype>* ip2_weights = this->net_->layers()[2]->blobs()[0].get();
   // Check that data blobs of shared weights share the same location in memory.
   EXPECT_EQ(ip1_weights->cpu_data(), ip2_weights->cpu_data());
   // Check that diff blobs of shared weights are at different locations in
@@ -621,7 +651,7 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
   this->net_->Forward(bottom);
   this->net_->Backward();
   // Compute the expected update as the data minus the two diffs.
-  Blob<TypeParam> shared_params;
+  Blob<Dtype> shared_params;
   const bool reshape = true;
   const bool copy_diff = false;
   shared_params.CopyFrom(*ip1_weights, copy_diff, reshape);
@@ -633,13 +663,13 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
     EXPECT_NE(0, ip2_weights->cpu_diff()[i]);
     EXPECT_NE(ip1_weights->cpu_diff()[i], ip2_weights->cpu_diff()[i]);
   }
-  caffe_axpy(count, TypeParam(1), ip2_weights->cpu_diff(),
+  caffe_axpy(count, Dtype(1), ip2_weights->cpu_diff(),
              shared_params.mutable_cpu_diff());
-  caffe_axpy(count, TypeParam(-1), shared_params.cpu_diff(),
+  caffe_axpy(count, Dtype(-1), shared_params.cpu_diff(),
              shared_params.mutable_cpu_data());
-  const TypeParam* expected_updated_params = shared_params.cpu_data();
+  const Dtype* expected_updated_params = shared_params.cpu_data();
   this->net_->Update();
-  const TypeParam* actual_updated_params = ip1_weights->cpu_data();
+  const Dtype* actual_updated_params = ip1_weights->cpu_data();
   for (int i = 0; i < count; ++i) {
     EXPECT_EQ(expected_updated_params[i], actual_updated_params[i]);
   }
@@ -660,10 +690,10 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
   this->net_->Forward(bottom);
   this->net_->Backward();
   // Compute the expected update.
-  Blob<TypeParam> unshared_params1;
+  Blob<Dtype> unshared_params1;
   unshared_params1.CopyFrom(*ip1_weights, copy_diff, reshape);
   unshared_params1.CopyFrom(*ip1_weights, !copy_diff, reshape);
-  Blob<TypeParam> unshared_params2;
+  Blob<Dtype> unshared_params2;
   unshared_params2.CopyFrom(*ip2_weights, copy_diff, reshape);
   unshared_params2.CopyFrom(*ip2_weights, !copy_diff, reshape);
   // Make sure the diffs are non-trivial and sum to the diff in the shared net.
@@ -674,15 +704,15 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
     EXPECT_EQ(ip1_weights->cpu_diff()[i] + ip2_weights->cpu_diff()[i],
               shared_params.cpu_diff()[i]);
   }
-  caffe_axpy(count, TypeParam(-1), ip1_weights->cpu_diff(),
+  caffe_axpy(count, Dtype(-1), ip1_weights->cpu_diff(),
              unshared_params1.mutable_cpu_data());
-  caffe_axpy(count, TypeParam(-1), ip2_weights->cpu_diff(),
+  caffe_axpy(count, Dtype(-1), ip2_weights->cpu_diff(),
              unshared_params2.mutable_cpu_data());
-  const TypeParam* expected_updated_params1 = unshared_params1.cpu_data();
-  const TypeParam* expected_updated_params2 = unshared_params2.cpu_data();
+  const Dtype* expected_updated_params1 = unshared_params1.cpu_data();
+  const Dtype* expected_updated_params2 = unshared_params2.cpu_data();
   this->net_->Update();
-  const TypeParam* actual_updated_params1 = ip1_weights->cpu_data();
-  const TypeParam* actual_updated_params2 = ip2_weights->cpu_data();
+  const Dtype* actual_updated_params1 = ip1_weights->cpu_data();
+  const Dtype* actual_updated_params2 = ip2_weights->cpu_data();
   for (int i = 0; i < count; ++i) {
     EXPECT_EQ(expected_updated_params1[i], actual_updated_params1[i]);
     EXPECT_EQ(expected_updated_params2[i], actual_updated_params2[i]);
@@ -691,91 +721,938 @@ TYPED_TEST(NetTest, TestSharedWeightsUpdateCPU) {
   }
 }
 
-TYPED_TEST(NetTest, TestSharedWeightsUpdateGPU) {
-  Caffe::set_random_seed(this->seed_);
-  Caffe::set_mode(Caffe::GPU);
-  this->InitDiffDataSharedWeightsNet();
-  vector<Blob<TypeParam>*> bottom;
-  EXPECT_EQ(this->net_->layer_names()[1], "innerproduct1");
-  EXPECT_EQ(this->net_->layer_names()[2], "innerproduct2");
-  Blob<TypeParam>* ip1_weights = this->net_->layers()[1]->blobs()[0].get();
-  Blob<TypeParam>* ip2_weights = this->net_->layers()[2]->blobs()[0].get();
-  // Check that data blobs of shared weights share the same location in memory.
-  EXPECT_EQ(ip1_weights->cpu_data(), ip2_weights->cpu_data());
-  // Check that diff blobs of shared weights are at different locations in
-  // locations.  (The diffs should be accumulated at update time.)
-  EXPECT_NE(ip1_weights->cpu_diff(), ip2_weights->cpu_diff());
-  this->net_->Forward(bottom);
-  this->net_->Backward();
-  // Compute the expected update as the data minus the two diffs.
-  Blob<TypeParam> shared_params;
-  const bool reshape = true;
-  const bool copy_diff = false;
-  shared_params.CopyFrom(*ip1_weights, copy_diff, reshape);
-  shared_params.CopyFrom(*ip1_weights, !copy_diff, reshape);
-  const int count = ip1_weights->count();
-  // Make sure the diffs are non-trivial.
-  for (int i = 0; i < count; ++i) {
-    EXPECT_NE(0, ip1_weights->cpu_diff()[i]);
-    EXPECT_NE(0, ip2_weights->cpu_diff()[i]);
-    EXPECT_NE(ip1_weights->cpu_diff()[i], ip2_weights->cpu_diff()[i]);
-  }
-  caffe_axpy(count, TypeParam(1), ip2_weights->cpu_diff(),
-             shared_params.mutable_cpu_diff());
-  caffe_axpy(count, TypeParam(-1), shared_params.cpu_diff(),
-             shared_params.mutable_cpu_data());
-  const TypeParam* expected_updated_params = shared_params.cpu_data();
-  this->net_->Update();
-  const TypeParam* actual_updated_params = ip1_weights->cpu_data();
-  for (int i = 0; i < count; ++i) {
-    EXPECT_EQ(expected_updated_params[i], actual_updated_params[i]);
-  }
-  // Check that data blobs of shared weights STILL point to the same memory
-  // location (because ... who knows).
-  EXPECT_EQ(ip1_weights->cpu_data(), ip2_weights->cpu_data());
+TYPED_TEST(NetTest, TestParamPropagateDown) {
+  typedef typename TypeParam::Dtype Dtype;
+  vector<Blob<Dtype>*> bottom;
+  const bool kBiasTerm = true;
 
+  // Run the net with all params learned; check that gradients are non-zero.
   Caffe::set_random_seed(this->seed_);
-  this->InitDiffDataUnsharedWeightsNet();
-  EXPECT_EQ(this->net_->layer_names()[1], "innerproduct1");
-  EXPECT_EQ(this->net_->layer_names()[2], "innerproduct2");
-  ip1_weights = this->net_->layers()[1]->blobs()[0].get();
-  ip2_weights = this->net_->layers()[2]->blobs()[0].get();
-  // Check that data and diff blobs of unshared weights are at different
-  // locations in memory.
-  EXPECT_NE(ip1_weights->cpu_data(), ip2_weights->cpu_data());
-  EXPECT_NE(ip1_weights->cpu_diff(), ip2_weights->cpu_diff());
+  Dtype blobs_lr_w1 = 1, blobs_lr_w2 = 1, blobs_lr_b1 = 2, blobs_lr_b2 = 2;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
   this->net_->Forward(bottom);
   this->net_->Backward();
-  // Compute the expected update.
-  Blob<TypeParam> unshared_params1;
-  unshared_params1.CopyFrom(*ip1_weights, copy_diff, reshape);
-  unshared_params1.CopyFrom(*ip1_weights, !copy_diff, reshape);
-  Blob<TypeParam> unshared_params2;
-  unshared_params2.CopyFrom(*ip2_weights, copy_diff, reshape);
-  unshared_params2.CopyFrom(*ip2_weights, !copy_diff, reshape);
-  // Make sure the diffs are non-trivial and sum to the diff in the shared net.
-  for (int i = 0; i < count; ++i) {
-    EXPECT_NE(0, ip1_weights->cpu_diff()[i]);
-    EXPECT_NE(0, ip2_weights->cpu_diff()[i]);
-    EXPECT_NE(ip1_weights->cpu_diff()[i], ip2_weights->cpu_diff()[i]);
-    EXPECT_EQ(ip1_weights->cpu_diff()[i] + ip2_weights->cpu_diff()[i],
-              shared_params.cpu_diff()[i]);
+  const vector<shared_ptr<Blob<Dtype> > >& params = this->net_->params();
+  const int num_params = params.size();
+  ASSERT_EQ(4, num_params);
+  const Dtype kNonZeroTestMin = 1e-3;
+  vector<Dtype> param_asums(params.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params[i]->count(), params[i]->cpu_diff());
+    param_asums[i] = param_asum;
+    EXPECT_GT(param_asum, kNonZeroTestMin);
   }
-  caffe_axpy(count, TypeParam(-1), ip1_weights->cpu_diff(),
-             unshared_params1.mutable_cpu_data());
-  caffe_axpy(count, TypeParam(-1), ip2_weights->cpu_diff(),
-             unshared_params2.mutable_cpu_data());
-  const TypeParam* expected_updated_params1 = unshared_params1.cpu_data();
-  const TypeParam* expected_updated_params2 = unshared_params2.cpu_data();
-  this->net_->Update();
-  const TypeParam* actual_updated_params1 = ip1_weights->cpu_data();
-  const TypeParam* actual_updated_params2 = ip2_weights->cpu_data();
-  for (int i = 0; i < count; ++i) {
-    EXPECT_EQ(expected_updated_params1[i], actual_updated_params1[i]);
-    EXPECT_EQ(expected_updated_params2[i], actual_updated_params2[i]);
-    EXPECT_NE(actual_updated_params1[i], actual_updated_params2[i]);
-    EXPECT_NE(expected_updated_params, expected_updated_params1);
+
+  // Change the learning rates to different non-zero values; should see same
+  // gradients.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 *= 2, blobs_lr_w2 *= 2, blobs_lr_b1 *= 2, blobs_lr_b2 *= 2;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params2 = this->net_->params();
+  ASSERT_EQ(num_params, params2.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params2[i]->count(), params2[i]->cpu_diff());
+    EXPECT_EQ(param_asum, param_asums[i]);
   }
+
+  // Change a subset of the learning rates to zero; check that we see zero
+  // gradients for those.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 = 1, blobs_lr_w2 = 0, blobs_lr_b1 = 0, blobs_lr_b2 = 1;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params3 = this->net_->params();
+  ASSERT_EQ(num_params, params3.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params3[i]->count(), params3[i]->cpu_diff());
+    if (i == 1 || i == 2) {
+      EXPECT_EQ(0, param_asum);
+    } else {
+      EXPECT_EQ(param_asum, param_asums[i]);
+    }
+  }
+
+  // Change the opposite subset of the learning rates to zero.
+  Caffe::set_random_seed(this->seed_);
+  blobs_lr_w1 = 0, blobs_lr_w2 = 1, blobs_lr_b1 = 1, blobs_lr_b2 = 0;
+  this->InitUnsharedWeightsNet(kBiasTerm, blobs_lr_w1, blobs_lr_w2,
+                               blobs_lr_b1, blobs_lr_b2);
+  this->net_->Forward(bottom);
+  this->net_->Backward();
+  const vector<shared_ptr<Blob<Dtype> > >& params4 = this->net_->params();
+  ASSERT_EQ(num_params, params4.size());
+  for (int i = 0; i < num_params; ++i) {
+    const Dtype param_asum =
+       caffe_cpu_asum(params4[i]->count(), params4[i]->cpu_diff());
+    if (i == 0 || i == 3) {
+      EXPECT_EQ(0, param_asum);
+    } else {
+      EXPECT_EQ(param_asum, param_asums[i]);
+    }
+  }
+}
+
+TYPED_TEST(NetTest, TestFromTo) {
+  typedef typename TypeParam::Dtype Dtype;
+  this->InitTinyNet();
+
+  // Run Forward and Backward, recording the data diff and loss.
+  Blob<Dtype> data;
+  data.ReshapeLike(*this->net_->blob_by_name("data"));
+  this->net_->ForwardPrefilled();
+  this->net_->Backward();
+  data.CopyFrom(*this->net_->blob_by_name("data"), true, true);
+  const Dtype *loss_ptr = this->net_->output_blobs()[0]->cpu_data();
+  Dtype loss = *loss_ptr;
+
+  // Check that combining partial Forwards gives the same loss.
+  for (int i = 1; i < this->net_->layers().size(); ++i) {
+    // Note that we skip layer zero to keep the same data.
+    this->net_->ForwardFromTo(1, 1);
+    if (i < this->net_->layers().size() - 1) {
+      this->net_->ForwardFrom(i + 1);
+    }
+    EXPECT_EQ(loss, *loss_ptr);
+  }
+
+  // Check that combining partial Backwards gives the same data diff.
+  for (int i = 1; i < this->net_->layers().size(); ++i) {
+    this->net_->BackwardTo(i);
+    this->net_->BackwardFrom(i - 1);
+    for (int j = 0; j < data.count(); ++j) {
+      EXPECT_EQ(data.cpu_diff()[j],
+          this->net_->blob_by_name("data")->cpu_diff()[j]);
+    }
+  }
+}
+
+class FilterNetTest : public ::testing::Test {
+ protected:
+  void RunFilterNetTest(
+      const string& input_param_string, const string& filtered_param_string) {
+    NetParameter input_param;
+    CHECK(google::protobuf::TextFormat::ParseFromString(
+        input_param_string, &input_param));
+    NetParameter expected_filtered_param;
+    CHECK(google::protobuf::TextFormat::ParseFromString(
+        filtered_param_string, &expected_filtered_param));
+    NetParameter actual_filtered_param;
+    Net<float>::FilterNet(input_param, &actual_filtered_param);
+    EXPECT_EQ(expected_filtered_param.DebugString(),
+        actual_filtered_param.DebugString());
+    // Also test idempotence.
+    NetParameter double_filtered_param;
+    Net<float>::FilterNet(actual_filtered_param, &double_filtered_param);
+    EXPECT_EQ(actual_filtered_param.DebugString(),
+       double_filtered_param.DebugString());
+  }
+};
+
+TEST_F(FilterNetTest, TestNoFilter) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterLeNetTrainTest) {
+  const string& input_proto =
+      "name: 'LeNet' "
+      "layers { "
+      "  name: 'mnist' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  data_param { "
+      "    source: 'mnist-train-leveldb' "
+      "    scale: 0.00390625 "
+      "    batch_size: 64 "
+      "  } "
+      "  include: { phase: TRAIN } "
+      "} "
+      "layers { "
+      "  name: 'mnist' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  data_param { "
+      "    source: 'mnist-test-leveldb' "
+      "    scale: 0.00390625 "
+      "    batch_size: 100 "
+      "  } "
+      "  include: { phase: TEST } "
+      "} "
+      "layers { "
+      "  name: 'conv1' "
+      "  type: CONVOLUTION "
+      "  bottom: 'data' "
+      "  top: 'conv1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  convolution_param { "
+      "    num_output: 20 "
+      "    kernel_size: 5 "
+      "    stride: 1 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'ip1' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'conv1' "
+      "  top: 'ip1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  inner_product_param { "
+      "    num_output: 10 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'accuracy' "
+      "  type: ACCURACY "
+      "  bottom: 'ip1' "
+      "  bottom: 'label' "
+      "  top: 'accuracy' "
+      "  include: { phase: TEST } "
+      "} "
+      "layers { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'ip2' "
+      "  bottom: 'label' "
+      "  top: 'loss' "
+      "} ";
+  const string input_proto_train = "state: { phase: TRAIN } " + input_proto;
+  const string input_proto_test = "state: { phase: TEST } " + input_proto;
+  const string& output_proto_train =
+      "state: { phase: TRAIN } "
+      "name: 'LeNet' "
+      "layers { "
+      "  name: 'mnist' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  data_param { "
+      "    source: 'mnist-train-leveldb' "
+      "    scale: 0.00390625 "
+      "    batch_size: 64 "
+      "  } "
+      "  include: { phase: TRAIN } "
+      "} "
+      "layers { "
+      "  name: 'conv1' "
+      "  type: CONVOLUTION "
+      "  bottom: 'data' "
+      "  top: 'conv1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  convolution_param { "
+      "    num_output: 20 "
+      "    kernel_size: 5 "
+      "    stride: 1 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'ip1' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'conv1' "
+      "  top: 'ip1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  inner_product_param { "
+      "    num_output: 10 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'ip2' "
+      "  bottom: 'label' "
+      "  top: 'loss' "
+      "} ";
+  const string& output_proto_test =
+      "state: { phase: TEST } "
+      "name: 'LeNet' "
+      "layers { "
+      "  name: 'mnist' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  data_param { "
+      "    source: 'mnist-test-leveldb' "
+      "    scale: 0.00390625 "
+      "    batch_size: 100 "
+      "  } "
+      "  include: { phase: TEST } "
+      "} "
+      "layers { "
+      "  name: 'conv1' "
+      "  type: CONVOLUTION "
+      "  bottom: 'data' "
+      "  top: 'conv1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  convolution_param { "
+      "    num_output: 20 "
+      "    kernel_size: 5 "
+      "    stride: 1 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'ip1' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'conv1' "
+      "  top: 'ip1' "
+      "  blobs_lr: 1 "
+      "  blobs_lr: 2 "
+      "  inner_product_param { "
+      "    num_output: 10 "
+      "    weight_filler { "
+      "      type: 'xavier' "
+      "    } "
+      "    bias_filler { "
+      "      type: 'constant' "
+      "    } "
+      "  } "
+      "} "
+      "layers { "
+      "  name: 'accuracy' "
+      "  type: ACCURACY "
+      "  bottom: 'ip1' "
+      "  bottom: 'label' "
+      "  top: 'accuracy' "
+      "  include: { phase: TEST } "
+      "} "
+      "layers { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'ip2' "
+      "  bottom: 'label' "
+      "  top: 'loss' "
+      "} ";
+  this->RunFilterNetTest(input_proto_train, output_proto_train);
+  this->RunFilterNetTest(input_proto_test, output_proto_test);
+}
+
+TEST_F(FilterNetTest, TestFilterOutByStage) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "  include: { stage: 'mystage' } "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  const string& output_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, output_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterOutByStage2) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { stage: 'mystage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  const string& output_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, output_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByStage) {
+  const string& input_proto =
+      "state: { stage: 'mystage' } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { stage: 'mystage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByStage2) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  exclude: { stage: 'mystage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterOutByMultipleStage) {
+  const string& input_proto =
+      "state: { stage: 'mystage' } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { stage: 'mystage' stage: 'myotherstage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { stage: 'mystage' } "
+      "} ";
+  const string& output_proto =
+      "state: { stage: 'mystage' } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { stage: 'mystage' } "
+      "} ";
+  this->RunFilterNetTest(input_proto, output_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMultipleStage) {
+  const string& input_proto =
+      "state: { stage: 'mystage' } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { stage: 'myotherstage' } "
+      "  include: { stage: 'mystage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { stage: 'mystage' } "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMultipleStage2) {
+  const string& input_proto =
+      "state: { stage: 'mystage' stage: 'myotherstage' } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { stage: 'mystage' stage: 'myotherstage' } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { stage: 'mystage' } "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterOutByMinLevel) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 3 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  const string& output_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, output_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterOutByMaxLevel) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { max_level: -3 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  const string& output_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, output_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMinLevel) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 0 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMinLevel2) {
+  const string& input_proto =
+      "state: { level: 7 } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 3 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMaxLevel) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { max_level: 0 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInByMaxLevel2) {
+  const string& input_proto =
+      "state: { level: -7 } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { max_level: -3 } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "} ";
+  this->RunFilterNetTest(input_proto, input_proto);
+}
+
+TEST_F(FilterNetTest, TestFilterInOutByIncludeMultiRule) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 2  phase: TRAIN } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { min_level: 2  phase: TEST } "
+      "} ";
+  const string& input_proto_train =
+      "state: { level: 4  phase: TRAIN } " + input_proto;
+  const string& input_proto_test =
+      "state: { level: 4  phase: TEST } " + input_proto;
+  const string& output_proto_train =
+      "state: { level: 4  phase: TRAIN } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 2  phase: TRAIN } "
+      "} ";
+  const string& output_proto_test =
+      "state: { level: 4  phase: TEST } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { min_level: 2  phase: TEST } "
+      "} ";
+  this->RunFilterNetTest(input_proto_train, output_proto_train);
+  this->RunFilterNetTest(input_proto_test, output_proto_test);
+}
+
+TEST_F(FilterNetTest, TestFilterInByIncludeMultiRule) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  include: { min_level: 2  phase: TRAIN } "
+      "  include: { phase: TEST } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  include: { min_level: 2  phase: TEST } "
+      "  include: { phase: TRAIN } "
+      "} ";
+  const string& input_proto_train =
+      "state: { level: 2  phase: TRAIN } " + input_proto;
+  const string& input_proto_test =
+      "state: { level: 2  phase: TEST } " + input_proto;
+  this->RunFilterNetTest(input_proto_train, input_proto_train);
+  this->RunFilterNetTest(input_proto_test, input_proto_test);
+}
+
+TEST_F(FilterNetTest, TestFilterInOutByExcludeMultiRule) {
+  const string& input_proto =
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  exclude: { min_level: 2  phase: TRAIN } "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  exclude: { min_level: 2  phase: TEST } "
+      "} ";
+  const string& input_proto_train =
+      "state: { level: 4  phase: TRAIN } " + input_proto;
+  const string& input_proto_test =
+      "state: { level: 4  phase: TEST } " + input_proto;
+  const string& output_proto_train =
+      "state: { level: 4  phase: TRAIN } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'loss' "
+      "  type: SOFTMAX_LOSS "
+      "  bottom: 'innerprod' "
+      "  bottom: 'label' "
+      "  exclude: { min_level: 2  phase: TEST } "
+      "} ";
+  const string& output_proto_test =
+      "state: { level: 4  phase: TEST } "
+      "name: 'TestNetwork' "
+      "layers: { "
+      "  name: 'data' "
+      "  type: DATA "
+      "  top: 'data' "
+      "  top: 'label' "
+      "} "
+      "layers: { "
+      "  name: 'innerprod' "
+      "  type: INNER_PRODUCT "
+      "  bottom: 'data' "
+      "  top: 'innerprod' "
+      "  exclude: { min_level: 2  phase: TRAIN } "
+      "} ";
+  this->RunFilterNetTest(input_proto_train, output_proto_train);
+  this->RunFilterNetTest(input_proto_test, output_proto_test);
 }
 
 }  // namespace caffe

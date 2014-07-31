@@ -1,6 +1,9 @@
 ---
+title: ImageNet tutorial
+description: Train and test "CaffeNet" on ImageNet challenge data.
+category: example
+include_in_docs: true
 layout: default
-title: Caffe
 ---
 
 Yangqing's Recipe on Brewing ImageNet
@@ -38,7 +41,7 @@ You may want to resize the images to 256x256 in advance. By default, we do not e
 
 Go to `$CAFFE_ROOT/examples/imagenet/` for the rest of this guide.
 
-Take a look at `create_imagenet.sh`. Set the paths to the train and val dirs as needed, and set "RESIZE=true" to resize all images to 256x256 if you haven't resized the images in advance. Now simply create the leveldbs with `./create_imagenet.sh`. Note that `imagenet_train_leveldb` and `imagenet_val_leveldb` should not exist before this execution. It will be created by the script. `GLOG_logtostderr=1` simply dumps more information for you to inspect, and you can safely ignore it.
+Take a look at `create_imagenet.sh`. Set the paths to the train and val dirs as needed, and set "RESIZE=true" to resize all images to 256x256 if you haven't resized the images in advance. Now simply create the leveldbs with `./create_imagenet.sh`. Note that `ilsvrc12_train_leveldb` and `ilsvrc12_val_leveldb` should not exist before this execution. It will be created by the script. `GLOG_logtostderr=1` simply dumps more information for you to inspect, and you can safely ignore it.
 
 Compute Image Mean
 ------------------
@@ -69,12 +72,11 @@ We will also lay out a protocol buffer for running the solver. Let's make a few 
 * The network will be trained with momentum 0.9 and a weight decay of 0.0005.
 * For every 10,000 iterations, we will take a snapshot of the current status.
 
-Sound good? This is implemented in `examples/imagenet/imagenet_solver.prototxt`. Again, you will need to change the first two lines:
+Sound good? This is implemented in `examples/imagenet/imagenet_solver.prototxt`. Again, you will need to change the first line:
 
-    train_net: "imagenet_train.prototxt"
-    test_net: "imagenet_val.prototxt"
+    net: "imagenet_train_val.prototxt"
 
-to point to the actual path if you have changed them.
+to point to the actual path if you have changed it.
 
 Training ImageNet
 -----------------

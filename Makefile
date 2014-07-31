@@ -17,7 +17,7 @@ else
 	OTHER_BUILD_DIR := $(DEBUG_BUILD_DIR)
 endif
 
-# The target static library and shared library name
+# The target shared library and static library name
 LIB_BUILD_DIR := $(BUILD_DIR)/lib
 NAME := $(LIB_BUILD_DIR)/lib$(PROJECT).so
 STATIC_NAME := $(LIB_BUILD_DIR)/lib$(PROJECT).a
@@ -28,7 +28,7 @@ STATIC_NAME := $(LIB_BUILD_DIR)/lib$(PROJECT).a
 # CXX_SRCS are the source files excluding the test ones.
 CXX_SRCS := $(shell find src/$(PROJECT) ! -name "test_*.cpp" -name "*.cpp")
 # HXX_SRCS are the header files
-HXX_SRCS := $(shell find include/$(PROJECT) -name "*.hpp")
+HXX_SRCS := $(shell find include/$(PROJECT) ! -name "test_*.hpp" -name "*.hpp")
 # CU_SRCS are the cuda source files
 CU_SRCS := $(shell find src/$(PROJECT) ! -name "test_*.cu" -name "*.cu")
 # TEST_SRCS are the test source files
@@ -37,8 +37,8 @@ TEST_SRCS := $(shell find src/$(PROJECT) -name "test_*.cpp")
 TEST_SRCS := $(filter-out $(TEST_MAIN_SRC), $(TEST_SRCS))
 TEST_CU_SRCS := $(shell find src/$(PROJECT) -name "test_*.cu")
 GTEST_SRC := src/gtest/gtest-all.cpp
-# TEST_HDRS are the test header files
-TEST_HDRS := $(shell find src/$(PROJECT) -name "test_*.hpp")
+# TEST_HXX_SRCS are the test header files
+TEST_HXX_SRCS := $(shell find include/$(PROJECT) -name "test_*.hpp")
 # TOOL_SRCS are the source files for the tool binaries
 TOOL_SRCS := $(shell find tools -name "*.cpp")
 # EXAMPLE_SRCS are the source files for the example binaries
@@ -62,8 +62,11 @@ NONGEN_CXX_SRCS := $(shell find \
 	examples \
 	tools \
 	-name "*.cpp" -or -name "*.hpp" -or -name "*.cu" -or -name "*.cuh")
-LINT_REPORT := $(BUILD_DIR)/cpp_lint.log
-FAILED_LINT_REPORT := $(BUILD_DIR)/cpp_lint.error_log
+LINT_OUTPUT_DIR := $(BUILD_DIR)/.lint
+LINT_EXT := lint.txt
+LINT_OUTPUTS := $(addsuffix .$(LINT_EXT), $(addprefix $(LINT_OUTPUT_DIR)/, $(NONGEN_CXX_SRCS)))
+EMPTY_LINT_REPORT := $(BUILD_DIR)/.$(LINT_EXT)
+NONEMPTY_LINT_REPORT := $(BUILD_DIR)/$(LINT_EXT)
 # PY$(PROJECT)_SRC is the python wrapper for $(PROJECT)
 PY$(PROJECT)_SRC := python/$(PROJECT)/_$(PROJECT).cpp
 PY$(PROJECT)_SO := python/$(PROJECT)/_$(PROJECT).so
@@ -114,6 +117,8 @@ EXAMPLE_BUILD_DIRS += $(foreach obj,$(EXAMPLE_OBJS),$(dir $(obj)))
 # tool, example, and test bins
 TOOL_BINS := ${TOOL_OBJS:.o=.bin}
 EXAMPLE_BINS := ${EXAMPLE_OBJS:.o=.bin}
+# symlinks to tool bins without the ".bin" extension
+TOOL_BIN_LINKS := ${TOOL_BINS:.bin=}
 # Put the test binaries in build/test for convenience.
 TEST_BIN_DIR := $(BUILD_DIR)/test
 TEST_CU_BINS := $(addsuffix .testbin,$(addprefix $(TEST_BIN_DIR)/, \
@@ -124,17 +129,36 @@ TEST_BINS := $(TEST_CXX_BINS) $(TEST_CU_BINS)
 TEST_ALL_BIN := $(TEST_BIN_DIR)/test_all.testbin
 
 ##############################
+# Derive compiler warning dump locations
+##############################
+WARNS_EXT := warnings.txt
+CXX_WARNS := $(addprefix $(BUILD_DIR)/, ${CXX_SRCS:.cpp=.o.$(WARNS_EXT)})
+CU_WARNS := $(addprefix $(BUILD_DIR)/, ${CU_SRCS:.cu=.cuo.$(WARNS_EXT)})
+TOOL_WARNS := $(addprefix $(BUILD_DIR)/, ${TOOL_SRCS:.cpp=.o.$(WARNS_EXT)})
+EXAMPLE_WARNS := $(addprefix $(BUILD_DIR)/, ${EXAMPLE_SRCS:.cpp=.o.$(WARNS_EXT)})
+TEST_WARNS := $(addprefix $(BUILD_DIR)/, ${TEST_SRCS:.cpp=.o.$(WARNS_EXT)})
+TEST_CU_WARNS := $(addprefix $(BUILD_DIR)/, ${TEST_CU_SRCS:.cu=.cuo.$(WARNS_EXT)})
+ALL_CXX_WARNS := $(CXX_WARNS) $(TOOL_WARNS) $(EXAMPLE_WARNS) $(TEST_WARNS)
+ALL_CU_WARNS := $(CU_WARNS) $(TEST_CU_WARNS)
+ALL_WARNS := $(ALL_CXX_WARNS) $(ALL_CU_WARNS)
+
+EMPTY_WARN_REPORT := $(BUILD_DIR)/.$(WARNS_EXT)
+NONEMPTY_WARN_REPORT := $(BUILD_DIR)/$(WARNS_EXT)
+
+##############################
 # Derive include and lib directories
 ##############################
 CUDA_INCLUDE_DIR := $(CUDA_DIR)/include
 CUDA_LIB_DIR := $(CUDA_DIR)/lib64 $(CUDA_DIR)/lib
 
-INCLUDE_DIRS += $(BUILD_INCLUDE_DIR)
-INCLUDE_DIRS += ./src ./include $(CUDA_INCLUDE_DIR)
-LIBRARY_DIRS += $(CUDA_LIB_DIR)
-LIBRARIES := cudart cublas curand \
-	pthread \
-	glog protobuf leveldb snappy \
+INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include
+ifneq ($(CPU_ONLY), 1)
+	INCLUDE_DIRS += $(CUDA_INCLUDE_DIR)
+	LIBRARY_DIRS += $(CUDA_LIB_DIR)
+	LIBRARIES := cudart cublas curand
+endif
+LIBRARIES += \
+	glog gflags pthread protobuf leveldb snappy \
 	lmdb \
 	boost_system \
 	hdf5_hl hdf5 \
@@ -157,6 +181,7 @@ ALL_BUILD_DIRS := $(sort \
 		$(LAYER_BUILD_DIR) $(UTIL_BUILD_DIR) $(TOOL_BUILD_DIR) \
 		$(TEST_BUILD_DIR) $(TEST_BIN_DIR) $(GTEST_BUILD_DIR) \
 		$(EXAMPLE_BUILD_DIRS) \
+		$(LINT_OUTPUT_DIR) \
 		$(PROTO_BUILD_DIR) $(PROTO_BUILD_INCLUDE_DIR) $(PY_PROTO_BUILD_DIR) \
 		$(DISTRIBUTE_SUBDIRS))
 
@@ -173,12 +198,22 @@ else ifeq ($(UNAME), Darwin)
 endif
 
 ifeq ($(LINUX), 1)
-	CXX := /usr/bin/g++
+	CXX ?= /usr/bin/g++
 	GCCVERSION := $(shell $(CXX) -dumpversion | cut -f1,2 -d.)
 	# older versions of gcc are too dumb to build boost with -Wuninitalized
 	ifeq ($(shell echo $(GCCVERSION) \< 4.6 | bc), 1)
 		WARNINGS += -Wno-uninitialized
 	endif
+endif
+
+# CPU-only configuration
+ifeq ($(CPU_ONLY), 1)
+	OBJS := $(PROTO_OBJS) $(CXX_OBJS)
+	TEST_OBJS := $(TEST_CXX_OBJS)
+	TEST_BINS := $(TEST_CXX_BINS)
+	ALL_WARNS := $(ALL_CXX_WARNS)
+	TEST_FILTER := --gtest_filter="-*GPU*"
+	COMMON_FLAGS += -DCPU_ONLY
 endif
 
 # OS X:
@@ -194,16 +229,16 @@ ifeq ($(OSX), 1)
 	endif
 endif
 
-# Custom compiler 
+# Custom compiler
 ifdef CUSTOM_CXX
 	CXX := $(CUSTOM_CXX)
 endif
 
 # Debugging
 ifeq ($(DEBUG), 1)
-	COMMON_FLAGS := -DDEBUG -g -O0
+	COMMON_FLAGS += -DDEBUG -g -O0
 else
-	COMMON_FLAGS := -DNDEBUG -O2
+	COMMON_FLAGS += -DNDEBUG -O2
 endif
 
 # BLAS configuration (default = ATLAS)
@@ -212,12 +247,12 @@ ifeq ($(BLAS), mkl)
 	# MKL
 	LIBRARIES += mkl_rt
 	COMMON_FLAGS += -DUSE_MKL
-	MKL_DIR = /opt/intel/mkl
+	MKL_DIR ?= /opt/intel/mkl
 	BLAS_INCLUDE ?= $(MKL_DIR)/include
 	BLAS_LIB ?= $(MKL_DIR)/lib $(MKL_DIR)/lib/intel64
 else ifeq ($(BLAS), open)
 	# OpenBLAS
-	LIBRARIES += openblas
+	LIBRARIES += blas
 else
 	# ATLAS
 	ifeq ($(LINUX), 1)
@@ -262,26 +297,39 @@ SUPERCLEAN_EXTS := .so .a .o .bin .testbin .pb.cc .pb.h _pb2.py .cuo
 ##############################
 .PHONY: all test clean linecount lint tools examples $(DIST_ALIASES) \
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
-	superclean supercleanlist supercleanfiles
+	superclean supercleanlist supercleanfiles warn everything
 
 all: $(NAME) $(STATIC_NAME) tools examples
 
-linecount: clean
+everything: all py$(PROJECT) mat$(PROJECT) test warn lint runtest
+
+linecount:
 	cloc --read-lang-def=$(PROJECT).cloc src/$(PROJECT)/
 
-lint: $(LINT_REPORT)
+lint: $(EMPTY_LINT_REPORT)
 
-$(LINT_REPORT): $(NONGEN_CXX_SRCS) | $(BUILD_DIR)
-	@ (python ./scripts/cpp_lint.py $(NONGEN_CXX_SRCS) > $(LINT_REPORT) 2>&1 \
-		&& ($(RM) $(FAILED_LINT_REPORT); echo "No lint errors!")) || ( \
-			mv $(LINT_REPORT) $(FAILED_LINT_REPORT); \
-			grep -v "^Done processing " $(FAILED_LINT_REPORT); \
-			echo "Found 1 or more lint errors; see log at $(FAILED_LINT_REPORT)"; \
-			exit 1)
+$(EMPTY_LINT_REPORT): $(LINT_OUTPUTS) | $(BUILD_DIR)
+	@ cat $(LINT_OUTPUTS) > $@
+	@ if [ -s "$@" ]; then \
+		cat $@; \
+		mv $@ $(NONEMPTY_LINT_REPORT); \
+		echo "Found one or more lint errors."; \
+		exit 1; \
+	  fi; \
+	  $(RM) $(NONEMPTY_LINT_REPORT); \
+	  echo "No lint errors!";
+
+$(LINT_OUTPUTS): $(LINT_OUTPUT_DIR)/%.lint.txt : % | $(LINT_OUTPUT_DIR)
+	@ mkdir -p $(dir $@)
+	@ python ./scripts/cpp_lint.py $< 2>&1 \
+		| grep -v "^Done processing " \
+		| grep -v "^Total errors found: 0" \
+		> $@ \
+		|| true
 
 test: $(TEST_ALL_BIN) $(TEST_BINS)
 
-tools: $(TOOL_BINS)
+tools: $(TOOL_BINS) $(TOOL_BIN_LINKS)
 
 examples: $(EXAMPLE_BINS)
 
@@ -304,13 +352,31 @@ $(MAT$(PROJECT)_SO): $(MAT$(PROJECT)_SRC) $(STATIC_NAME)
 			"to build mat$(PROJECT)."; \
 		exit 1; \
 	fi
-	$(MATLAB_DIR)/bin/mex $(MAT$(PROJECT)_SRC) $(STATIC_NAME) \
+	$(MATLAB_DIR)/bin/mex $(MAT$(PROJECT)_SRC) \
+			CXX="$(CXX)" \
 			CXXFLAGS="\$$CXXFLAGS $(MATLAB_CXXFLAGS)" \
-			CXXLIBS="\$$CXXLIBS $(LDFLAGS)" -o $@
+			CXXLIBS="\$$CXXLIBS $(STATIC_NAME) $(LDFLAGS)" -output $@
 	@ echo
 
 runtest: $(TEST_ALL_BIN)
-	$(TEST_ALL_BIN) $(TEST_GPUID) --gtest_shuffle
+	$(TEST_ALL_BIN) $(TEST_GPUID) --gtest_shuffle $(TEST_FILTER)
+
+warn: $(EMPTY_WARN_REPORT)
+
+$(EMPTY_WARN_REPORT): $(ALL_WARNS) | $(BUILD_DIR)
+	@ cat $(ALL_WARNS) > $@
+	@ if [ -s "$@" ]; then \
+		cat $@; \
+		mv $@ $(NONEMPTY_WARN_REPORT); \
+		echo "Compiler produced one or more warnings."; \
+		exit 1; \
+	  fi; \
+	  $(RM) $(NONEMPTY_WARN_REPORT); \
+	  echo "No compiler warnings!";
+
+$(ALL_CXX_WARNS): %.o.$(WARNS_EXT) : %.o
+
+$(ALL_CU_WARNS): %.cuo.$(WARNS_EXT) : %.cuo
 
 $(BUILD_DIR_LINK): $(BUILD_DIR)/.linked
 
@@ -335,14 +401,18 @@ $(STATIC_NAME): $(PROTO_OBJS) $(OBJS) | $(LIB_BUILD_DIR)
 	ar rcs $@ $(PROTO_OBJS) $(OBJS)
 	@ echo
 
-$(TEST_BUILD_DIR)/%.o: src/$(PROJECT)/test/%.cpp $(HXX_SRCS) $(TEST_HDRS) \
+$(TEST_BUILD_DIR)/%.o: src/$(PROJECT)/test/%.cpp $(HXX_SRCS) $(TEST_HXX_SRCS) \
 		| $(TEST_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
-$(TEST_BUILD_DIR)/%.cuo: src/$(PROJECT)/test/%.cu $(HXX_SRCS) $(TEST_HDRS) \
+$(TEST_BUILD_DIR)/%.cuo: src/$(PROJECT)/test/%.cu $(HXX_SRCS) $(TEST_HXX_SRCS) \
 		| $(TEST_BUILD_DIR)
-	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@
+	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(TEST_ALL_BIN): $(TEST_MAIN_SRC) $(TEST_OBJS) $(GTEST_OBJ) $(STATIC_NAME) \
@@ -363,6 +433,11 @@ $(TEST_CXX_BINS): $(TEST_BIN_DIR)/%.testbin: $(TEST_BUILD_DIR)/%.o $(GTEST_OBJ) 
 		-o $@ $(LINKFLAGS) $(LDFLAGS)
 	@ echo
 
+# Target for extension-less symlinks to tool binaries with extension '*.bin'.
+$(TOOL_BUILD_DIR)/%: $(TOOL_BUILD_DIR)/%.bin | $(TOOL_BUILD_DIR)
+	@ $(RM) $@
+	@ ln -s $(abspath $<) $@
+
 $(TOOL_BINS): %.bin : %.o $(STATIC_NAME)
 	$(CXX) $< $(STATIC_NAME) -o $@ $(LINKFLAGS) $(LDFLAGS)
 	@ echo
@@ -373,42 +448,60 @@ $(EXAMPLE_BINS): %.bin : %.o $(STATIC_NAME)
 
 $(LAYER_BUILD_DIR)/%.o: src/$(PROJECT)/layers/%.cpp $(HXX_SRCS) \
 		| $(LAYER_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(PROTO_BUILD_DIR)/%.pb.o: $(PROTO_BUILD_DIR)/%.pb.cc $(PROTO_GEN_HEADER) \
 		| $(PROTO_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(UTIL_BUILD_DIR)/%.o: src/$(PROJECT)/util/%.cpp $(HXX_SRCS) | $(UTIL_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(GTEST_OBJ): $(GTEST_SRC) | $(GTEST_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(LAYER_BUILD_DIR)/%.cuo: src/$(PROJECT)/layers/%.cu $(HXX_SRCS) \
 		| $(LAYER_BUILD_DIR)
-	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@
+	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(UTIL_BUILD_DIR)/%.cuo: src/$(PROJECT)/util/%.cu | $(UTIL_BUILD_DIR)
-	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@
+	$(CUDA_DIR)/bin/nvcc $(NVCCFLAGS) $(CUDA_ARCH) -c $< -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(TOOL_BUILD_DIR)/%.o: tools/%.cpp $(PROTO_GEN_HEADER) | $(TOOL_BUILD_DIR)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(EXAMPLE_BUILD_DIR)/%.o: examples/%.cpp $(PROTO_GEN_HEADER) \
 		| $(EXAMPLE_BUILD_DIRS)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 $(BUILD_DIR)/src/$(PROJECT)/%.o: src/$(PROJECT)/%.cpp $(HXX_SRCS)
-	$(CXX) $< $(CXXFLAGS) -c -o $@
+	$(CXX) $< $(CXXFLAGS) -c -o $@ 2> $@.$(WARNS_EXT) \
+		|| (cat $@.$(WARNS_EXT); exit 1)
+	@ cat $@.$(WARNS_EXT)
 	@ echo
 
 proto: $(PROTO_GEN_CC) $(PROTO_GEN_HEADER)

@@ -46,17 +46,17 @@ class ConvolutionLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
 
-  int kernel_size_;
-  int stride_;
+  int kernel_h_, kernel_w_;
+  int stride_h_, stride_w_;
   int num_;
   int channels_;
-  int pad_;
+  int pad_h_, pad_w_;
   int height_;
   int width_;
   int num_output_;
   int group_;
   Blob<Dtype> col_buffer_;
-  shared_ptr<SyncedMemory> bias_multiplier_;
+  Blob<Dtype> bias_multiplier_;
   bool bias_term_;
   int M_;
   int K_;
@@ -120,12 +120,12 @@ class Im2colLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
 
-  int kernel_size_;
-  int stride_;
+  int kernel_h_, kernel_w_;
+  int stride_h_, stride_w_;
   int channels_;
   int height_;
   int width_;
-  int pad_;
+  int pad_h_, pad_w_;
 };
 
 /* InnerProductLayer
@@ -158,7 +158,7 @@ class InnerProductLayer : public Layer<Dtype> {
   int K_;
   int N_;
   bool bias_term_;
-  shared_ptr<SyncedMemory> bias_multiplier_;
+  Blob<Dtype> bias_multiplier_;
 };
 
 // Forward declare PoolingLayer and SplitLayer for use in LRNLayer.
@@ -274,7 +274,7 @@ class PoolingLayer : public Layer<Dtype> {
   int pooled_height_;
   int pooled_width_;
   Blob<Dtype> rand_idx_;
-  shared_ptr<Blob<int> > max_idx_;
+  Blob<int> max_idx_;
 };
 
 /* PyramidLevelLayer
