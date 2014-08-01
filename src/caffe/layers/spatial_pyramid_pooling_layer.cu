@@ -15,9 +15,10 @@ Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_gpu(
   if (num_pyramid_levels_ > 1) {
     split_layer_->Forward(bottom, &split_top_vec_);
     for (int i = 0; i < num_pyramid_levels_; ++i) {
-      loss += pyramid_levels_[i]->Forward(pooling_bottom_vecs_[i], &(pooling_top_vecs_[i]));
+      loss += pyramid_levels_[i]->Forward(pooling_bottom_vecs_[i],
+          &(pooling_top_vecs_[i]));
       loss += flatten_layers_[i]->Forward(pooling_top_vecs_[i],
-                                          &(flatten_top_vecs_[i]));
+          &(flatten_top_vecs_[i]));
     }
     loss += concat_layer_->Forward(concat_bottom_vec_, top);
   } else {

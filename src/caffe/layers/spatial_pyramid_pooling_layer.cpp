@@ -18,7 +18,8 @@ void SpatialPyramidPoolingLayer<Dtype>::SetUp(
 
   LayerParameter layer_param;
   layer_param.mutable_concat_param()->set_concat_dim(1);
-  PyramidLevelParameter* pyramid_level_param = layer_param.mutable_pyramid_level_param();
+  PyramidLevelParameter* pyramid_level_param =
+      layer_param.mutable_pyramid_level_param();
   switch (this->layer_param_.pooling_param().pool()) {
   case SpatialPyramidPoolingParameter_PoolMethod_MAX:
     pyramid_level_param->set_pool(PyramidLevelParameter_PoolMethod_MAX);
@@ -92,10 +93,12 @@ void SpatialPyramidPoolingLayer<Dtype>::SetUp(
       this->layer_param_.spatial_pyramid_pooling_param().roi_start_w() : 0);
   int roi_end_h =
       (this->layer_param_.spatial_pyramid_pooling_param().has_roi_end_h() ?
-      this->layer_param_.spatial_pyramid_pooling_param().roi_end_h() : bottom[0]->height());
+      this->layer_param_.spatial_pyramid_pooling_param().roi_end_h() :
+      bottom[0]->height());
   int roi_end_w =
       (this->layer_param_.spatial_pyramid_pooling_param().has_roi_end_w() ?
-      this->layer_param_.spatial_pyramid_pooling_param().roi_end_w() : bottom[0]->width());
+      this->layer_param_.spatial_pyramid_pooling_param().roi_end_w() :
+      bottom[0]->width());
   this->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
 }
 

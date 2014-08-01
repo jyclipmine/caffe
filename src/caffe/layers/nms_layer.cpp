@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <algorithm>
 
 #include "caffe/layer.hpp"
@@ -28,14 +29,15 @@ float ScoredBoxes::IoU(const ScoredBoxes& another_box) const {
     int yy2 = std::min(this->y2_, another_box.y2_);
     int xx2 = std::min(this->x2_, another_box.x2_);
     int inter = std::max(0, yy2 - yy1 + 1) * std::max(0, xx2 - xx1 + 1);
-    return float(inter) / float(this->area_ + another_box.area_ - inter);
+    return (static_cast<float>(inter)
+        / static_cast<float>(this->area_ + another_box.area_ - inter));
 }
 
 inline bool operator>(const ScoredBoxes& box1, const ScoredBoxes& box2) {
   return box1.get_score() > box2.get_score();
 }
 
-void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th);
+void runNMS(list<ScoredBoxes>* sboxes_list, float nms_th);
 
 template <typename Dtype>
 void NMSLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
@@ -45,8 +47,10 @@ void NMSLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   CHECK_GE(bottom[1]->height(), 0) << "proposal dimension must be 1*1*n*4";
   CHECK_EQ(bottom[1]->channels(), 1) << "proposal dimension must be 1*1*n*4";
   CHECK_EQ(bottom[1]->num(), 1) << "proposal dimension must be 1*1*n*4";
-  CHECK_EQ(bottom[1]->height(), bottom[0]->num()) << "proposal number must match the num of fc8";
-  CHECK_EQ(bottom[0]->channels(), bottom[2]->count()) << "class number of fc8 must be consistent with class mask";
+  CHECK_EQ(bottom[1]->height(), bottom[0]->num())
+      << "proposal number must match the num of fc8";
+  CHECK_EQ(bottom[0]->channels(), bottom[2]->count())
+      << "class number of fc8 must be consistent with class mask";
   proposal_num_ = bottom[1]->height();
   class_num_ = bottom[0]->channels();
   NMSParameter nms_param = this->layer_param_.nms_param();
@@ -85,20 +89,22 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         if (!y1 && !x1 && !y2 && !x2) {
           break;
         }
-        nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id, box_id));
-        runNMS(nms_list_1_, nms_th_1_);
+        nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id,
+            box_id));
+        runNMS(&nms_list_1_, nms_th_1_);
       }
     }
-    nms_list_2_.insert(nms_list_2_.end(), nms_list_1_.begin(), nms_list_1_.end());
+    nms_list_2_.insert(nms_list_2_.end(), nms_list_1_.begin(),
+        nms_list_1_.end());
   }
   // Between-class NMS
-  runNMS(nms_list_2_, nms_th_2_);
+  runNMS(&nms_list_2_, nms_th_2_);
   // Write results
   int count = 0;
   list<ScoredBoxes>::iterator iter;
   for (iter = nms_list_2_.begin();
       (iter != nms_list_2_.end()) && (count < disp_num_); ++iter, ++count) {
-    int box_id = int(iter->get_box_id());
+    int box_id = iter->get_box_id();
     result_vecs[box_id] = 1;
     result_vecs[box_id + proposal_num_] = iter->get_class_id();
     result_vecs[box_id + 2*proposal_num_] = iter->get_score();
@@ -106,26 +112,27 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   return Dtype(0.);
 }
 
-void runNMS(list<ScoredBoxes>& sboxes_list, float nms_th) {
-  sboxes_list.sort(operator>); // sort the boxes into descending score
+void runNMS(list<ScoredBoxes>* sboxes_list, float nms_th) {
+  // sort the boxes into descending score
+  sboxes_list->sort(operator >);
   list<ScoredBoxes>::iterator iter1, iter2, highest_box, to_remove, critical;
-  for (iter1 = sboxes_list.begin(); iter1 != sboxes_list.end(); ) {
+  for (iter1 = sboxes_list->begin(); iter1 != sboxes_list->end(); ) {
     highest_box = iter1++;
     critical = iter1;
     ++critical;
-    for (iter2 = iter1; iter2 != sboxes_list.end(); ) {
+    for (iter2 = iter1; iter2 != sboxes_list->end(); ) {
       to_remove = iter2++;
       float IoU = highest_box->IoU(*to_remove);
       if (IoU > nms_th) {
         if (iter1 == to_remove) {
           ++iter1;
-          sboxes_list.erase(to_remove);
+          sboxes_list->erase(to_remove);
         } else if (critical == to_remove) {
-          sboxes_list.erase(to_remove);
+          sboxes_list->erase(to_remove);
           iter1 = iter2;
           --iter1;
         } else {
-          sboxes_list.erase(to_remove);
+          sboxes_list->erase(to_remove);
         }
       }
     }

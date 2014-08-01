@@ -34,7 +34,8 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
 
   Dtype* top_data = layer->prefetch_data_->mutable_cpu_data();
   Dtype* top_label = layer->prefetch_label_->mutable_cpu_data();
-  const int batch_size = layer->layer_param_.spp_window_data_param().batch_size();
+  const int batch_size =
+      layer->layer_param_.spp_window_data_param().batch_size();
   const int spp5_dim = layer->layer_param_.spp_window_data_param().spp5_dim();
   const float fg_fraction =
       layer->layer_param_.spp_window_data_param().fg_fraction();
@@ -46,7 +47,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   const int num_fg = static_cast<int>(static_cast<float>(batch_size)
       * fg_fraction);
   const int num_samples[2] = { batch_size - num_fg, num_fg };
-  char cache_name[128];
+  char cache_name_max128[128];
   int item_id = 0;
   // sample from bg set then fg set
   for (int is_fg = 0; is_fg < 2; ++is_fg) {
@@ -56,19 +57,18 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
       vector<float> window = (is_fg) ?
           layer->fg_windows_[rand_index % layer->fg_windows_.size()] :
           layer->bg_windows_[rand_index % layer->bg_windows_.size()];
-
       pair<std::string, vector<int> > image =
-          layer->image_database_[window[SPPWindowDataLayer<Dtype>::IMAGE_INDEX]];
-          
+          layer->image_database_[window[
+          SPPWindowDataLayer<Dtype>::IMAGE_INDEX]];
       // get feature cache file path
       int image_index = window[SPPWindowDataLayer<Dtype>::IMAGE_INDEX];
       int x1 = window[SPPWindowDataLayer<Dtype>::X1];
       int y1 = window[SPPWindowDataLayer<Dtype>::Y1];
       int x2 = window[SPPWindowDataLayer<Dtype>::X2];
       int y2 = window[SPPWindowDataLayer<Dtype>::Y2];
-      sprintf(cache_name, "%d/%d_%d_%d_%d.spp5feat", image_index, x1, y1, x2, y2);
-      string cache_file_path = layer->cache_dir_ + "/" + cache_name;
-      
+      snprintf(cache_name_max128, sizeof(cache_name_max128),
+          "%d/%d_%d_%d_%d.spp5feat", image_index, x1, y1, x2, y2);
+      string cache_file_path = layer->cache_dir_ + "/" + cache_name_max128;
       // read feature into cpu memory
       Dtype* target_addr = top_data + spp5_dim * item_id;
       int read_bytes = sizeof(Dtype) * spp5_dim;
@@ -78,7 +78,6 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
           << image.first;
       cache_ifs.read(reinterpret_cast<char*>(target_addr), read_bytes);
       cache_ifs.close();
-
       // get window label
       top_label[item_id] = window[SPPWindowDataLayer<Dtype>::LABEL];
       item_id++;
@@ -111,16 +110,19 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   //    width
   //    num_windows
   //    class_index overlap x1 y1 x2 y2
-
   LOG(INFO) << "SPPWindowData layer:" << std::endl
       << "  foreground (object) minimum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().fg_overlap_min() << std::endl
+      << this->layer_param_.spp_window_data_param().fg_overlap_min()
+      << std::endl
       << "  foreground (object) maximum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().fg_overlap_max() << std::endl
+      << this->layer_param_.spp_window_data_param().fg_overlap_max()
+      << std::endl
       << "  background (non-object) minimum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().bg_overlap_min() << std::endl
+      << this->layer_param_.spp_window_data_param().bg_overlap_min()
+      << std::endl
       << "  background (non-object) maximum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().bg_overlap_max() << std::endl
+      << this->layer_param_.spp_window_data_param().bg_overlap_max()
+      << std::endl
       << "  foreground sampling fraction: "
       << this->layer_param_.spp_window_data_param().fg_fraction() << std::endl
       << "  spp5 feature dimension: "
@@ -128,11 +130,10 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       << "  spp5 feature cache directory: "
       << this->layer_param_.spp_window_data_param().cache_dir() << std::endl;
   cache_dir_ = this->layer_param_.spp_window_data_param().cache_dir();
-  
-  std::ifstream infile(this->layer_param_.spp_window_data_param().source().c_str());
+  std::ifstream infile(
+      this->layer_param_.spp_window_data_param().source().c_str());
   CHECK(infile.good()) << "Failed to open window file "
       << this->layer_param_.spp_window_data_param().source() << std::endl;
-  
   map<int, int> label_hist;
   label_hist.insert(std::make_pair(0, 0));
 
@@ -158,7 +159,6 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
         this->layer_param_.spp_window_data_param().fg_overlap_min();
     const float fg_overlap_max =
         this->layer_param_.spp_window_data_param().fg_overlap_max();
-        
     const float bg_overlap_min =
         this->layer_param_.spp_window_data_param().bg_overlap_min();
     const float bg_overlap_max =
@@ -211,7 +211,8 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
               << " samples";
   }
 
-  const int batch_size = this->layer_param_.spp_window_data_param().batch_size();
+  const int batch_size =
+      this->layer_param_.spp_window_data_param().batch_size();
   const int spp5_dim = this->layer_param_.spp_window_data_param().spp5_dim();
   (*top)[0]->Reshape(batch_size, 1, 1, spp5_dim);
   prefetch_data_.reset(new Blob<Dtype>(batch_size, 1, 1, spp5_dim));

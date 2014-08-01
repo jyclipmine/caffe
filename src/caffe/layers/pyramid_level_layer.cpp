@@ -28,8 +28,10 @@ void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
     max_top_blobs_ = 1;
   }
   Layer<Dtype>::SetUp(bottom, top);
-  PyramidLevelParameter pyramid_level_param = this->layer_param_.pyramid_level_param();
-  CHECK(pyramid_level_param.has_bin_num_h() && pyramid_level_param.has_bin_num_w())
+  PyramidLevelParameter pyramid_level_param =
+      this->layer_param_.pyramid_level_param();
+  CHECK(pyramid_level_param.has_bin_num_h()
+      && pyramid_level_param.has_bin_num_w())
       << "Both bin_num_h and bin_num_w are required";
   bin_num_h_ = pyramid_level_param.bin_num_h();
   bin_num_w_ = pyramid_level_param.bin_num_w();
@@ -80,8 +82,8 @@ void PyramidLevelLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
   roi_start_w_ = roi_start_w;
   roi_end_h_ = roi_end_h;
   roi_end_w_ = roi_end_w;
-  bin_size_h_ = float(roi_end_h_ - roi_start_h_) / bin_num_h_;
-  bin_size_w_ = float(roi_end_w_ - roi_start_w_) / bin_num_w_;
+  bin_size_h_ = static_cast<float>(roi_end_h_ - roi_start_h_) / bin_num_h_;
+  bin_size_w_ = static_cast<float>(roi_end_w_ - roi_start_w_) / bin_num_w_;
 }
 
 // TODO(Yangqing): Is there a faster way to do PyramidLevel in the channel-first
@@ -116,8 +118,10 @@ Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
           for (int pw = 0; pw < bin_num_w_; ++pw) {
             int hstart = roi_start_h_ + max(floor(ph * bin_size_h_), 0);
             int wstart = roi_start_w_ + max(floor(pw * bin_size_w_), 0);
-            int hend = min(roi_start_h_ + ceil((ph + 1) * bin_size_h_), roi_end_h_);
-            int wend = min(roi_start_w_ + ceil((pw + 1) * bin_size_w_), roi_end_w_);
+            int hend = min(roi_start_h_ + ceil((ph + 1) * bin_size_h_),
+                roi_end_h_);
+            int wend = min(roi_start_w_ + ceil((pw + 1) * bin_size_w_),
+                roi_end_w_);
             const int pool_index = ph * bin_num_w_ + pw;
             for (int h = hstart; h < hend; ++h) {
               for (int w = wstart; w < wend; ++w) {

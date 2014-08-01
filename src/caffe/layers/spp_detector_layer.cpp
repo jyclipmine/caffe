@@ -20,35 +20,41 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   Layer<Dtype>::SetUp(bottom, top);
   CHECK_EQ(bottom[0]->width(), bottom[0]->height())
-      << "the width and height of (expanded) conv5 feature maps should be equal";
+      << "the width and height of (expanded) "
+      << "conv5 feature maps should be equal";
   CHECK_EQ(bottom[1]->width(), 4)
-      << "conv5_windows dimension must be 1*1*n*4, where n is the number of proposals";
+      << "conv5_windows dimension must be 1*1*n*4, "
+      << "where n is the number of proposals";
   CHECK_GE(bottom[1]->height(), 0)
-      << "conv5_windows dimension must be 1*1*n*4, where n is the number of proposals";
+      << "conv5_windows dimension must be 1*1*n*4, "
+      << "where n is the number of proposals";
   CHECK_EQ(bottom[1]->channels(), 1)
-      << "conv5_windows dimension must be 1*1*n*4, where n is the number of proposals";
+      << "conv5_windows dimension must be 1*1*n*4, "
+      << "where n is the number of proposals";
   CHECK_EQ(bottom[1]->num(), 1)
-      << "conv5_windows dimension must be 1*1*n*4, where n is the number of proposals";
+      << "conv5_windows dimension must be 1*1*n*4, "
+      << "where n is the number of proposals";
   CHECK_EQ(bottom[1]->height(), bottom[2]->count())
-      << "number of region proposals in conv5_windows doesn't match with that in conv5_scales";
+      << "number of region proposals in conv5_windows "
+      << "doesn't match with that in conv5_scales";
   scale_num_ = bottom[0]->num();
   conv5_dim_ = bottom[0]->channels() * bottom[0]->height() * bottom[0]->width();
   proposal_num_ = bottom[1]->height();
-  
   LOG(INFO) << "There are " << scale_num_ << " scales and " << proposal_num_
       << " window proposals (in each batch)";
-    
   // Set up inner layers
   // There is one SPP layer for each scale
   LayerParameter layer_param;
   SpatialPyramidPoolingParameter* spatial_pyramid_pooling_param
       = layer_param.mutable_spatial_pyramid_pooling_param();
-  *spatial_pyramid_pooling_param = this->layer_param_.spatial_pyramid_pooling_param();
+  *spatial_pyramid_pooling_param =
+      this->layer_param_.spatial_pyramid_pooling_param();
   for (int scale = 0; scale < scale_num_; scale++) {
     vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
     vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
     // There is one SPP layer for each scale
-    spp_bottom[0]->Reshape(1, bottom[0]->channels(), bottom[0]->height(), bottom[0]->width());
+    spp_bottom[0]->Reshape(1, bottom[0]->channels(), bottom[0]->height(),
+        bottom[0]->width());
     shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
         new SpatialPyramidPoolingLayer<Dtype>(layer_param));
     spp_layer->SetUp(spp_bottom, &spp_top);
@@ -78,7 +84,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       break;
     }
     CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << n;
-    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window " << n;
+    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window "
+        << n;
     // Copy data into SPP net
     caffe_copy(conv5_dim_, bottom[0]->cpu_data() + conv5_dim_ * scale,
         spp_bottom_vecs_[scale][0]->mutable_cpu_data());
@@ -86,7 +93,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
     spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
     // Forward
-    spp_layers_[scale]->Forward(spp_bottom_vecs_[scale], &(spp_top_vecs_[scale]));
+    spp_layers_[scale]->Forward(spp_bottom_vecs_[scale],
+        &(spp_top_vecs_[scale]));
     // Copy data out of SPP net
     caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
