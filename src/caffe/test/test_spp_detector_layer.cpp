@@ -123,7 +123,7 @@ class SPPDetectorLayerTest : public ::testing::Test {
     EXPECT_EQ(blob_top_->height(), 1);
     EXPECT_EQ(blob_top_->width(), 3*3+2*2);
     layer.Forward(blob_bottom_vec_, &blob_top_vec_);
-   
+
     // Expected output 10 * 1 * 1 * (3*3+2*2)
     // [ 32    7   26   28   33   22   36   34   13   32   26   36   34 ]
     // [ 32   37   21   34   38   18   40   40   22   38   38   40   38 ]

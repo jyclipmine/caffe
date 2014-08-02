@@ -45,7 +45,8 @@ class PyramidLevelLayerTest : public MultiDeviceTest<TypeParam> {
   // Test for 2x 2 square pyramid level layer
   void TestForwardSquareRoi() {
     LayerParameter layer_param;
-    PyramidLevelParameter* pyramid_level_param = layer_param.mutable_pyramid_level_param();
+    PyramidLevelParameter* pyramid_level_param =
+        layer_param.mutable_pyramid_level_param();
     pyramid_level_param->set_bin_num_h(3);
     pyramid_level_param->set_bin_num_w(2);
     pyramid_level_param->set_roi_start_h(0);
@@ -106,7 +107,8 @@ class PyramidLevelLayerTest : public MultiDeviceTest<TypeParam> {
   // Test for 3x 2 rectangular pyramid level layer with kernel_h > kernel_w
   void TestForwardRectHigh() {
     LayerParameter layer_param;
-    PyramidLevelParameter* pyramid_level_param = layer_param.mutable_pyramid_level_param();
+    PyramidLevelParameter* pyramid_level_param =
+        layer_param.mutable_pyramid_level_param();
     pyramid_level_param->set_bin_num_h(5);
     pyramid_level_param->set_bin_num_w(4);
     pyramid_level_param->set_pool(PyramidLevelParameter_PoolMethod_MAX);
