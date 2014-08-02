@@ -47,7 +47,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->gpu_data(),
         (*top)[0]->mutable_gpu_data() + spp5_dim_ * n);
   }
-  LOG(INFO) << "Forwarding " << n << " boxes in this batch";
+  // LOG(INFO) << "Forwarding " << n << " boxes in this batch";
   return Dtype(0.);
 }
 
