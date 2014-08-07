@@ -40,7 +40,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   const int batch_per_file =
       layer->layer_param_.spp_window_data_param().batch_per_file();
   const int feat_dim = layer->layer_param_.spp_window_data_param().feat_dim();
-  ifstream& feat_ifs = layer->feat_ifs_ptr;
+  ifstream& feat_ifs = layer->feat_ifs;
 
   // open new feature cache file
   if (layer->open_new_file_) {
