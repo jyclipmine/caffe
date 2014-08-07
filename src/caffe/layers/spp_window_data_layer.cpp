@@ -59,7 +59,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
     layer->current_batch_id_ = 0;
     if (layer->actual_batch_num_  != batch_per_file) {
       LOG(INFO) << "there are " << layer->actual_batch_num_
-          << "batches in file " << file_path;
+          << " batches in file " << file_path;
     }
     layer->open_new_file_ = false;
   }
