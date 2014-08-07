@@ -83,8 +83,8 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
       break;
     }
-    CHECK_GE(scale, 0) << "invalid scale: " << scale << " of window " << n;
-    CHECK_LT(scale, scale_num_) << "invalid scale: " << scale << " of window "
+    CHECK_GE(scale, 0) << "Invalid scale: " << scale << " of window " << n;
+    CHECK_LT(scale, scale_num_) << "Invalid scale: " << scale << " of window "
         << n;
     // Copy data into SPP net
     caffe_copy(conv5_dim_, bottom[0]->cpu_data() + conv5_dim_ * scale,
@@ -99,7 +99,7 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->cpu_data(),
         (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
   }
-  // LOG(INFO) << "Forwarding " << n << " boxes in this batch";
+  LOG(INFO) << "Forwarding " << n << " boxes in this batch";
   return Dtype(0.);
 }
 
