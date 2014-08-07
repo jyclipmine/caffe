@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 #include "leveldb/db.h"
 #include "lmdb.h"
@@ -304,7 +305,7 @@ class WindowDataLayer : public Layer<Dtype>, public InternalThread {
   vector<vector<float> > bg_windows_;
 };
 
-// This function is used to create a pthread that prefetches the spp5 data.
+// This function is used to create a pthread that prefetches SPP data.
 template <typename Dtype>
 void* SPPWindowDataLayerPrefetch(void* layer_pointer);
 
@@ -344,11 +345,15 @@ class SPPWindowDataLayer : public Layer<Dtype> {
   pthread_t thread_;
   shared_ptr<Blob<Dtype> > prefetch_data_;
   shared_ptr<Blob<Dtype> > prefetch_label_;
-  vector<std::pair<std::string, vector<int> > > image_database_;
-  enum SPPWindowField { IMAGE_INDEX, LABEL, OVERLAP, X1, Y1, X2, Y2, NUM };
-  vector<vector<float> > fg_windows_;
-  vector<vector<float> > bg_windows_;
+  
   std::string cache_dir_;
+  std::string extension_;
+  std::ifstream feat_ifs;
+  int file_num_;
+  int current_file_id_;
+  int actual_batch_num_;
+  int current_batch_id_;
+  bool open_new_file_;
 };
 
 }  // namespace caffe

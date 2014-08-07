@@ -561,24 +561,18 @@ message NMSParameter {
 
 // Message that stores parameters used by SPPWindowDataLayer
 message SPPWindowDataParameter {
-  // Specify the data source.
-  optional string source = 1;
   // Specify the spp5 feature cache dir
-  optional string cache_dir = 2;
+  optional string cache_dir = 1;
+  // feature cache file extension
+  optional string extension = 2;
   // Specify the batch size.
   optional uint32 batch_size = 3;
+  // Number of batches per cached file
+  optional uint32 batch_per_file = 4;
+  // Number of cached file
+  optional uint32 file_num = 5;
   // Specify diminsional of spp5 feature.
-  optional uint32 spp5_dim = 4;
-  // Foreground (object) minimum overlap with groundtruth
-  optional float fg_overlap_min = 5 [default = 0.5];
-  // Foreground (object) maximum overlap with groundtruth
-  optional float fg_overlap_max = 6 [default = 1];
-  // Background (non-object) minimum overlap with groundtruth
-  optional float bg_overlap_min = 7 [default = 0];
-    // Background (non-object) maximum overlap with groundtruth
-  optional float bg_overlap_max = 8 [default = 0.5];
-  // Fraction of batch that should be foreground objects
-  optional float fg_fraction = 9 [default = 0.25];
+  optional uint32 feat_dim = 6;
 }
 
 // Message that stores parameters used by PowerLayer

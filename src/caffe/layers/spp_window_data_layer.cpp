@@ -21,6 +21,7 @@
 using std::string;
 using std::map;
 using std::pair;
+using std::ifstream;
 
 namespace caffe {
 
@@ -29,61 +30,62 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   SPPWindowDataLayer<Dtype>* layer =
       reinterpret_cast<SPPWindowDataLayer<Dtype>*>(layer_pointer);
 
-  // At each iteration, sample N windows where N*p are foreground (object)
-  // windows and N*(1-p) are background (non-object) windows
-
   Dtype* top_data = layer->prefetch_data_->mutable_cpu_data();
   Dtype* top_label = layer->prefetch_label_->mutable_cpu_data();
-  const int batch_size =
-      layer->layer_param_.spp_window_data_param().batch_size();
-  const int spp5_dim = layer->layer_param_.spp_window_data_param().spp5_dim();
-  const float fg_fraction =
-      layer->layer_param_.spp_window_data_param().fg_fraction();
-
   // zero out batch
   caffe_set(layer->prefetch_data_->count(), Dtype(0), top_data);
-  // input file stream
-  std::ifstream cache_ifs;
-  const int num_fg = static_cast<int>(static_cast<float>(batch_size)
-      * fg_fraction);
-  const int num_samples[2] = { batch_size - num_fg, num_fg };
-  char cache_name_max128[128];
-  int item_id = 0;
-  // sample from bg set then fg set
-  for (int is_fg = 0; is_fg < 2; ++is_fg) {
-    for (int dummy = 0; dummy < num_samples[is_fg]; ++dummy) {
-      // sample a window
-      const unsigned int rand_index = layer->PrefetchRand();
-      vector<float> window = (is_fg) ?
-          layer->fg_windows_[rand_index % layer->fg_windows_.size()] :
-          layer->bg_windows_[rand_index % layer->bg_windows_.size()];
-      pair<std::string, vector<int> > image =
-          layer->image_database_[window[
-          SPPWindowDataLayer<Dtype>::IMAGE_INDEX]];
-      // get feature cache file path
-      int image_index = window[SPPWindowDataLayer<Dtype>::IMAGE_INDEX];
-      int x1 = window[SPPWindowDataLayer<Dtype>::X1];
-      int y1 = window[SPPWindowDataLayer<Dtype>::Y1];
-      int x2 = window[SPPWindowDataLayer<Dtype>::X2];
-      int y2 = window[SPPWindowDataLayer<Dtype>::Y2];
-      snprintf(cache_name_max128, sizeof(cache_name_max128),
-          "%d/%d_%d_%d_%d.spp5feat", image_index, x1, y1, x2, y2);
-      string cache_file_path = layer->cache_dir_ + "/" + cache_name_max128;
-      // read feature into cpu memory
-      Dtype* target_addr = top_data + spp5_dim * item_id;
-      int read_bytes = sizeof(Dtype) * spp5_dim;
-      cache_ifs.open(cache_file_path.c_str(), std::ios::binary);
-      CHECK(cache_ifs.good()) << "Failed to open spp5 feature file "
-          << cache_file_path << ", which corresponds to image "
-          << image.first;
-      cache_ifs.read(reinterpret_cast<char*>(target_addr), read_bytes);
-      cache_ifs.close();
-      // get window label
-      top_label[item_id] = window[SPPWindowDataLayer<Dtype>::LABEL];
-      item_id++;
+
+  const int batch_size =
+      layer->layer_param_.spp_window_data_param().batch_size();
+  const int batch_per_file =
+      layer->layer_param_.spp_window_data_param().batch_per_file();
+  const int feat_dim = layer->layer_param_.spp_window_data_param().feat_dim();
+  ifstream& feat_ifs = layer->feat_ifs;
+
+  // open new feature cache file 
+  if (layer->open_new_file_) {
+    char id_str[16];
+    snprintf(id_str, sizeof(id_str), "%d", layer->current_file_id_);
+    string file_path = layer->cache_dir_ + "/" + id_str + layer->extension_;
+    feat_ifs.open(file_path.c_str(), std::ios::binary);
+    CHECK(feat_ifs.good()) << "Failed to open feature file " << file_path;
+    // check file parameteres
+    float feat_file_param[3];
+    feat_ifs.read(reinterpret_cast<char*>(feat_file_param),
+        sizeof(feat_file_param));
+    CHECK_EQ(feat_file_param[1], batch_size) << "batch size mismatch";
+    CHECK_EQ(feat_file_param[2], feat_dim) << "feature dimension mismatch";
+    layer->actual_batch_num_ = feat_file_param[0];
+    layer->current_batch_id_ = 0;
+    if (layer->actual_batch_num_  != batch_per_file) {
+      LOG(INFO) << "there are " << layer->actual_batch_num_
+          << "batches in file " << file_path;
     }
   }
-
+  // read label
+  feat_ifs.read(reinterpret_cast<char*>(top_label), sizeof(Dtype) * batch_size);
+  // read feature data
+  feat_ifs.read(reinterpret_cast<char*>(top_data),
+      sizeof(Dtype) * feat_dim * batch_size);
+  // check if stream is good
+  CHECK(feat_ifs.good()) << "Error occurred while reading batch id = "
+      << layer->current_batch_id_ << " of " << layer->actual_batch_num_ 
+      << " batches";
+  // move to next batch
+  layer->current_batch_id_++;
+  // check if this is the last batch in the file
+  if (layer->current_batch_id_ >= layer->actual_batch_num_) {
+    feat_ifs.close();
+    layer->current_batch_id_ = 0;
+    layer->actual_batch_num_ = 0;
+    // move to next file
+    layer->current_file_id_++;
+    // check if this is the last file
+    if (layer->current_file_id_ >= layer->file_num_) {
+      layer->current_file_id_ = 0;
+    }
+    layer->open_new_file_ = true;
+  }
   return reinterpret_cast<void*>(NULL);
 }
 
@@ -110,113 +112,34 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   //    width
   //    num_windows
   //    class_index overlap x1 y1 x2 y2
-  LOG(INFO) << "SPPWindowData layer:" << std::endl
-      << "  foreground (object) minimum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().fg_overlap_min()
-      << std::endl
-      << "  foreground (object) maximum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().fg_overlap_max()
-      << std::endl
-      << "  background (non-object) minimum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().bg_overlap_min()
-      << std::endl
-      << "  background (non-object) maximum overlap with groundtruth: "
-      << this->layer_param_.spp_window_data_param().bg_overlap_max()
-      << std::endl
-      << "  foreground sampling fraction: "
-      << this->layer_param_.spp_window_data_param().fg_fraction() << std::endl
-      << "  spp5 feature dimension: "
-      << this->layer_param_.spp_window_data_param().spp5_dim() << std::endl
-      << "  spp5 feature cache directory: "
-      << this->layer_param_.spp_window_data_param().cache_dir() << std::endl;
+  LOG(INFO) << "SPPWindowData layer:"
+      << "\n  feature cache directory: "
+      << this->layer_param_.spp_window_data_param().cache_dir()
+      << "\n  extension: "
+      << this->layer_param_.spp_window_data_param().extension()
+      << "\n  batch size: "
+      << this->layer_param_.spp_window_data_param().batch_size()
+      << "\n  batch per file: "
+      << this->layer_param_.spp_window_data_param().batch_per_file()
+      << "\n  file num: "
+      << this->layer_param_.spp_window_data_param().file_num()
+      << "\n  feature dimension: "
+      << this->layer_param_.spp_window_data_param().feat_dim() << std::endl;
+      
   cache_dir_ = this->layer_param_.spp_window_data_param().cache_dir();
-  std::ifstream infile(
-      this->layer_param_.spp_window_data_param().source().c_str());
-  CHECK(infile.good()) << "Failed to open window file "
-      << this->layer_param_.spp_window_data_param().source() << std::endl;
-  map<int, int> label_hist;
-  label_hist.insert(std::make_pair(0, 0));
+  extension_ = this->layer_param_.spp_window_data_param().extension();
+  file_num_ = this->layer_param_.spp_window_data_param().file_num();
+  current_file_id_ = 0;
+  actual_batch_num_ = 0;
+  current_batch_id_ = 0;
+  open_new_file_ = true;
 
-  string hashtag;
-  int image_index;
-  if (!(infile >> hashtag >> image_index)) {
-    LOG(FATAL) << "Window file is empty";
-  }
-  do {
-    CHECK_EQ(hashtag, "#");
-    // read image path
-    string image_path;
-    infile >> image_path;
-    // read image dimensions
-    vector<int> image_size(3);
-    infile >> image_size[0] >> image_size[1] >> image_size[2];
-    image_database_.push_back(std::make_pair(image_path, image_size));
-
-    // read each box
-    int num_windows;
-    infile >> num_windows;
-    const float fg_overlap_min =
-        this->layer_param_.spp_window_data_param().fg_overlap_min();
-    const float fg_overlap_max =
-        this->layer_param_.spp_window_data_param().fg_overlap_max();
-    const float bg_overlap_min =
-        this->layer_param_.spp_window_data_param().bg_overlap_min();
-    const float bg_overlap_max =
-        this->layer_param_.spp_window_data_param().bg_overlap_max();
-    for (int i = 0; i < num_windows; ++i) {
-      int label, x1, y1, x2, y2;
-      float overlap;
-      infile >> label >> overlap >> x1 >> y1 >> x2 >> y2;
-
-      vector<float> window(SPPWindowDataLayer::NUM);
-      window[SPPWindowDataLayer::IMAGE_INDEX] = image_index;
-      window[SPPWindowDataLayer::LABEL] = label;
-      window[SPPWindowDataLayer::OVERLAP] = overlap;
-      window[SPPWindowDataLayer::X1] = x1;
-      window[SPPWindowDataLayer::Y1] = y1;
-      window[SPPWindowDataLayer::X2] = x2;
-      window[SPPWindowDataLayer::Y2] = y2;
-
-      // add window to foreground list or background list
-      if (overlap >= fg_overlap_min && overlap <= fg_overlap_max) {
-        int label = window[SPPWindowDataLayer::LABEL];
-        CHECK_GT(label, 0);
-        fg_windows_.push_back(window);
-        label_hist.insert(std::make_pair(label, 0));
-        label_hist[label]++;
-      } else if (overlap >= bg_overlap_min && overlap < bg_overlap_max) {
-        // background window, force label and overlap to 0
-        window[SPPWindowDataLayer::LABEL] = 0;
-        window[SPPWindowDataLayer::OVERLAP] = 0;
-        bg_windows_.push_back(window);
-        label_hist[0]++;
-      }
-    }
-
-    if (image_index % 100 == 0) {
-      LOG(INFO) << "num: " << image_index << " "
-          << image_path << " "
-          << image_size[0] << " "
-          << image_size[1] << " "
-          << image_size[2] << " "
-          << "windows to process: " << num_windows;
-    }
-  } while (infile >> hashtag >> image_index);
-
-  LOG(INFO) << "Number of images: " << image_index+1;
-
-  for (map<int, int>::iterator it = label_hist.begin();
-      it != label_hist.end(); ++it) {
-    LOG(INFO) << "class " << it->first << " has " << label_hist[it->first]
-              << " samples";
-  }
-
+  // construct data blob and label blob
   const int batch_size =
       this->layer_param_.spp_window_data_param().batch_size();
-  const int spp5_dim = this->layer_param_.spp_window_data_param().spp5_dim();
-  (*top)[0]->Reshape(batch_size, 1, 1, spp5_dim);
-  prefetch_data_.reset(new Blob<Dtype>(batch_size, 1, 1, spp5_dim));
-
+  const int feat_dim = this->layer_param_.spp_window_data_param().feat_dim();
+  (*top)[0]->Reshape(batch_size, 1, 1, feat_dim);
+  prefetch_data_.reset(new Blob<Dtype>(batch_size, 1, 1, feat_dim));
   LOG(INFO) << "output data size: " << (*top)[0]->num() << ","
       << (*top)[0]->channels() << "," << (*top)[0]->height() << ","
       << (*top)[0]->width();
