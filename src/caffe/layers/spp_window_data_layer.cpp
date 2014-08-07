@@ -40,7 +40,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   const int batch_per_file =
       layer->layer_param_.spp_window_data_param().batch_per_file();
   const int feat_dim = layer->layer_param_.spp_window_data_param().feat_dim();
-  ifstream& feat_ifs = layer->feat_ifs;
+  ifstream& feat_ifs = layer->feat_ifs_ptr;
 
   // open new feature cache file
   if (layer->open_new_file_) {
@@ -61,6 +61,7 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
       LOG(INFO) << "there are " << layer->actual_batch_num_
           << "batches in file " << file_path;
     }
+    layer->open_new_file_ = false;
   }
   // read label
   feat_ifs.read(reinterpret_cast<char*>(top_label), sizeof(Dtype) * batch_size);
