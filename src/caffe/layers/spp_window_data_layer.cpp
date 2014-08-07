@@ -40,9 +40,9 @@ void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   const int batch_per_file =
       layer->layer_param_.spp_window_data_param().batch_per_file();
   const int feat_dim = layer->layer_param_.spp_window_data_param().feat_dim();
-  ifstream& feat_ifs = layer->feat_ifs;
+  ifstream& feat_ifs = layer->feat_ifs_ptr;
 
-  // open new feature cache file 
+  // open new feature cache file
   if (layer->open_new_file_) {
     char id_str[16];
     snprintf(id_str, sizeof(id_str), "%d", layer->current_file_id_);
@@ -154,7 +154,7 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   prefetch_data_->mutable_cpu_data();
   prefetch_label_->mutable_cpu_data();
   DLOG(INFO) << "Initializing prefetch";
-  CreatePrefetchThread();
+  // CreatePrefetchThread();
   DLOG(INFO) << "Prefetch initialized.";
 }
 
@@ -184,14 +184,15 @@ template <typename Dtype>
 Dtype SPPWindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
-  JoinPrefetchThread();
+  // JoinPrefetchThread();
+  SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
   // Copy the data
   caffe_copy(prefetch_data_->count(), prefetch_data_->cpu_data(),
              (*top)[0]->mutable_cpu_data());
   caffe_copy(prefetch_label_->count(), prefetch_label_->cpu_data(),
              (*top)[1]->mutable_cpu_data());
   // Start a new prefetch thread
-  CreatePrefetchThread();
+  // CreatePrefetchThread();
   return Dtype(0.);
 }
 
