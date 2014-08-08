@@ -25,9 +25,11 @@ namespace caffe {
 template <typename Dtype>
 Dtype SPPWindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
+  // Fetch data in main thread
+  SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
+
   // First, join the thread
   // JoinPrefetchThread();
-  SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
   // Copy the data
   caffe_copy(prefetch_data_->count(), prefetch_data_->cpu_data(),
       (*top)[0]->mutable_gpu_data());

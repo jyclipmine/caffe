@@ -155,22 +155,30 @@ void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   prefetch_data_->mutable_cpu_data();
   prefetch_label_->mutable_cpu_data();
   DLOG(INFO) << "Initializing prefetch";
-  // CreatePrefetchThread();
+  CreatePrefetchThread();
   DLOG(INFO) << "Prefetch initialized.";
 }
 
 template <typename Dtype>
 void SPPWindowDataLayer<Dtype>::CreatePrefetchThread() {
+/* Do nothing. Fetch data in main thread
+
   const unsigned int prefetch_rng_seed = caffe_rng_rand();
   prefetch_rng_.reset(new Caffe::RNG(prefetch_rng_seed));
   // Create the thread.
   CHECK(!pthread_create(&thread_, NULL, SPPWindowDataLayerPrefetch<Dtype>,
         static_cast<void*>(this))) << "Pthread execution failed.";
+
+*/
 }
 
 template <typename Dtype>
 void SPPWindowDataLayer<Dtype>::JoinPrefetchThread() {
+/* Do nothing. Fetch data in main thread
+
   CHECK(!pthread_join(thread_, NULL)) << "Pthread joining failed.";
+
+*/
 }
 
 template <typename Dtype>
@@ -184,9 +192,11 @@ unsigned int SPPWindowDataLayer<Dtype>::PrefetchRand() {
 template <typename Dtype>
 Dtype SPPWindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
+  // Fetch data in main thread
+  SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
+
   // First, join the thread
   // JoinPrefetchThread();
-  SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
   // Copy the data
   caffe_copy(prefetch_data_->count(), prefetch_data_->cpu_data(),
              (*top)[0]->mutable_cpu_data());
