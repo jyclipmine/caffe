@@ -227,18 +227,18 @@ message LayerParameter {
     LRN = 15;
     MEMORY_DATA = 29;
     MULTINOMIAL_LOGISTIC_LOSS = 16;
-    NMS = 37;
+      NMS = 137;
     POOLING = 17;
     POWER = 26;
-    PYRAMID_LEVEL = 34;
+      PYRAMID_LEVEL = 134;
     RELU = 18;
     SIGMOID = 19;
     SIGMOID_CROSS_ENTROPY_LOSS = 27;
     SOFTMAX = 20;
     SOFTMAX_LOSS = 21;
-    SPATIAL_PYRAMID_POOLING = 35;
-    SPP_DETECTOR = 36;
-    SPP_WINDOW_DATA = 38;
+      SPATIAL_PYRAMID_POOLING = 135;
+      SPP_DETECTOR = 136;
+      SPP_WINDOW_DATA = 138;
     SPLIT = 22;
     SLICE = 33;
     TANH = 23;
@@ -288,11 +288,11 @@ message LayerParameter {
   optional WindowDataParameter window_data_param = 20;
   optional ThresholdParameter threshold_param = 25;
   optional HingeLossParameter hinge_loss_param = 29;
-  optional PyramidLevelParameter pyramid_level_param = 34;
-  optional SpatialPyramidPoolingParameter spatial_pyramid_pooling_param = 35;
-  optional SPPDetectorParameter spp_detector_param = 36;
-  optional NMSParameter nms_param = 37;
-  optional SPPWindowDataParameter spp_window_data_param = 38;
+    optional PyramidLevelParameter pyramid_level_param = 134;
+    optional SpatialPyramidPoolingParameter spatial_pyramid_pooling_param = 135;
+    optional SPPDetectorParameter spp_detector_param = 136;
+    optional NMSParameter nms_param = 137;
+    optional SPPWindowDataParameter spp_window_data_param = 138;
   optional SliceParameter slice_param = 31;
 
   // DEPRECATED: The layer parameters specified as a V0LayerParameter.
