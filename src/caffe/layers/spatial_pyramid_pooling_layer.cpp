@@ -36,8 +36,7 @@ void SpatialPyramidPoolingLayer<Dtype>::LayerSetUp(
 
   if (num_pyramid_levels_ > 1) {
     split_top_vec_.clear();
-    split_top_vec_.push_back(bottom[0]);
-    for (int i = 1; i < num_pyramid_levels_; ++i) {
+    for (int i = 0; i < num_pyramid_levels_; ++i) {
       split_top_vec_.push_back(new Blob<Dtype>());
     }
     split_layer_.reset(new SplitLayer<Dtype>(layer_param));
