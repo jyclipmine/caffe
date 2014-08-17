@@ -16,18 +16,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void PyramidLevelLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void PyramidLevelLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  // Set the max number of top blobs before calling base Layer::SetUp.
-  // If doing MAX PyramidLevel, we can optionally output an extra top Blob
-  // for the mask.  Otherwise, we only have one top Blob.
-  if (this->layer_param_.pyramid_level_param().pool() ==
-      PyramidLevelParameter_PoolMethod_MAX) {
-    max_top_blobs_ = 2;
-  } else {
-    max_top_blobs_ = 1;
-  }
-  Layer<Dtype>::SetUp(bottom, top);
   PyramidLevelParameter pyramid_level_param =
       this->layer_param_.pyramid_level_param();
   CHECK(pyramid_level_param.has_bin_num_h()
@@ -89,7 +79,7 @@ void PyramidLevelLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
 // TODO(Yangqing): Is there a faster way to do PyramidLevel in the channel-first
 // case?
 template <typename Dtype>
-Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = (*top)[0]->mutable_cpu_data();
@@ -158,7 +148,6 @@ Dtype PyramidLevelLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   default:
     LOG(FATAL) << "Unknown PyramidLevel method.";
   }
-  return Dtype(0.);
 }
 
 template <typename Dtype>

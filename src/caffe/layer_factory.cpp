@@ -1,13 +1,11 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_LAYER_FACTORY_HPP_
 #define CAFFE_LAYER_FACTORY_HPP_
 
 #include <string>
 
 #include "caffe/layer.hpp"
-#include "caffe/vision_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/vision_layers.hpp"
 
 namespace caffe {
 
@@ -21,6 +19,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
   switch (type) {
   case LayerParameter_LayerType_ACCURACY:
     return new AccuracyLayer<Dtype>(param);
+  case LayerParameter_LayerType_ABSVAL:
+    return new AbsValLayer<Dtype>(param);
   case LayerParameter_LayerType_ARGMAX:
     return new ArgMaxLayer<Dtype>(param);
   case LayerParameter_LayerType_BNLL:
@@ -61,6 +61,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new MemoryDataLayer<Dtype>(param);
   case LayerParameter_LayerType_NMS:
     return new NMSLayer<Dtype>(param);
+  case LayerParameter_LayerType_MVN:
+    return new MVNLayer<Dtype>(param);
   case LayerParameter_LayerType_MULTINOMIAL_LOGISTIC_LOSS:
     return new MultinomialLogisticLossLayer<Dtype>(param);
   case LayerParameter_LayerType_POOLING:

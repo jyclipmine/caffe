@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_UTIL_IO_H_
 #define CAFFE_UTIL_IO_H_
 
@@ -8,11 +6,16 @@
 #include "google/protobuf/message.h"
 #include "hdf5.h"
 #include "hdf5_hl.h"
-#include "caffe/proto/caffe.pb.h"
 
 #include "caffe/blob.hpp"
+#include "caffe/proto/caffe.pb.h"
 
 #define HDF5_NUM_DIMS 4
+
+namespace leveldb {
+// Forward declaration for leveldb::Options to be used in GetlevelDBOptions().
+class Options;
+}
 
 namespace caffe {
 
@@ -72,6 +75,7 @@ inline bool ReadImageToDatum(const string& filename, const int label,
   return ReadImageToDatum(filename, label, 0, 0, datum);
 }
 
+leveldb::Options GetLevelDBOptions();
 
 template <typename Dtype>
 void hdf5_load_nd_dataset_helper(

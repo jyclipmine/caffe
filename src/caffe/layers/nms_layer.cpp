@@ -40,9 +40,8 @@ inline bool operator>(const ScoredBoxes& box1, const ScoredBoxes& box2) {
 void runNMS(list<ScoredBoxes>* sboxes_list, float nms_th);
 
 template <typename Dtype>
-void NMSLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void NMSLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   CHECK_EQ(bottom[1]->width(), 4) << "proposal dimension must be 1*1*n*4";
   CHECK_GE(bottom[1]->height(), 0) << "proposal dimension must be 1*1*n*4";
   CHECK_EQ(bottom[1]->channels(), 1) << "proposal dimension must be 1*1*n*4";
@@ -63,7 +62,7 @@ void NMSLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // clear previous results
   nms_list_1_.clear();
@@ -109,7 +108,6 @@ Dtype NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     result_vecs[box_id + proposal_num_] = iter->get_class_id();
     result_vecs[box_id + 2*proposal_num_] = iter->get_score();
   }
-  return Dtype(0.);
 }
 
 void runNMS(list<ScoredBoxes>* sboxes_list, float nms_th) {

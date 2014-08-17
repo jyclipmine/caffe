@@ -16,9 +16,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void SPPDetectorLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   CHECK_EQ(bottom[0]->width(), bottom[0]->height())
       << "the width and height of (expanded) "
       << "conv5 feature maps should be equal";
@@ -68,7 +67,7 @@ void SPPDetectorLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* conv_windows = bottom[1]->cpu_data();
   const Dtype* conv_scales = bottom[2]->cpu_data();
@@ -100,7 +99,6 @@ Dtype SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
   }
   LOG(INFO) << "Forwarding " << n << " boxes in this batch";
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(SPPDetectorLayer);

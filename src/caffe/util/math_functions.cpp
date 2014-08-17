@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <boost/math/special_functions/next.hpp>
 #include <boost/random.hpp>
 
@@ -58,7 +56,7 @@ void caffe_axpy<double>(const int N, const double alpha, const double* X,
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype* Y) {
   if (alpha == 0) {
-    memset(Y, 0, sizeof(Dtype) * N);
+    memset(Y, 0, sizeof(Dtype) * N);  // NOLINT(caffe/alt_fn)
     return;
   }
   for (int i = 0; i < N; ++i) {
@@ -89,12 +87,13 @@ void caffe_copy(const int N, const Dtype* X, Dtype* Y) {
   if (X != Y) {
     if (Caffe::mode() == Caffe::GPU) {
 #ifndef CPU_ONLY
+      // NOLINT_NEXT_LINE(caffe/alt_fn)
       CUDA_CHECK(cudaMemcpy(Y, X, sizeof(Dtype) * N, cudaMemcpyDefault));
 #else
       NO_GPU;
 #endif
     } else {
-      memcpy(Y, X, sizeof(Dtype) * N);
+      memcpy(Y, X, sizeof(Dtype) * N);  // NOLINT(caffe/alt_fn)
     }
   }
 }
@@ -205,6 +204,16 @@ void caffe_exp<float>(const int n, const float* a, float* y) {
 template <>
 void caffe_exp<double>(const int n, const double* a, double* y) {
   vdExp(n, a, y);
+}
+
+template <>
+void caffe_abs<float>(const int n, const float* a, float* y) {
+    vsAbs(n, a, y);
+}
+
+template <>
+void caffe_abs<double>(const int n, const double* a, double* y) {
+    vdAbs(n, a, y);
 }
 
 unsigned int caffe_rng_rand() {
@@ -350,7 +359,6 @@ double caffe_cpu_asum<double>(const int n, const double* x) {
 
 INSTANTIATE_CAFFE_CPU_UNARY_FUNC(sign);
 INSTANTIATE_CAFFE_CPU_UNARY_FUNC(sgnbit);
-INSTANTIATE_CAFFE_CPU_UNARY_FUNC(fabs);
 
 template <>
 void caffe_cpu_scale<float>(const int n, const float alpha, const float *x,

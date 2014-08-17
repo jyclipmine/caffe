@@ -1,11 +1,9 @@
-// Copyright 2014 BVLC and contributors.
-
-#include <stdint.h>
-#include <leveldb/db.h>
-#include <pthread.h>
-
 #include <string>
 #include <vector>
+
+#include "leveldb/db.h"
+#include "pthread.h"
+#include "stdint.h"
 
 #include "caffe/layer.hpp"
 #include "caffe/util/io.hpp"
@@ -14,7 +12,7 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
   JoinPrefetchThread();
@@ -27,7 +25,6 @@ Dtype DataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   }
   // Start a new prefetch thread
   CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(DataLayer);

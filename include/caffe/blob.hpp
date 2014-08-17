@@ -1,11 +1,9 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_BLOB_HPP_
 #define CAFFE_BLOB_HPP_
 
 #include "caffe/common.hpp"
-#include "caffe/syncedmem.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
@@ -25,7 +23,7 @@ class Blob {
   inline int channels() const { return channels_; }
   inline int height() const { return height_; }
   inline int width() const { return width_; }
-  inline int count() const {return count_; }
+  inline int count() const { return count_; }
   inline int offset(const int n, const int c = 0, const int h = 0,
       const int w = 0) const {
     CHECK_GE(n, 0);

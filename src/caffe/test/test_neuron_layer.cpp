@@ -1,22 +1,22 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <cstring>
 #include <vector>
 
 #include "gtest/gtest.h"
+
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
 #include "caffe/filler.hpp"
 #include "caffe/vision_layers.hpp"
-#include "caffe/test/test_gradient_check_util.hpp"
 
 #include "caffe/test/test_caffe_main.hpp"
+#include "caffe/test/test_gradient_check_util.hpp"
 
 namespace caffe {
 
 template <typename TypeParam>
 class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
+
  protected:
   NeuronLayerTest()
       : blob_bottom_(new Blob<Dtype>(2, 3, 4, 5)),
@@ -34,9 +34,64 @@ class NeuronLayerTest : public MultiDeviceTest<TypeParam> {
   Blob<Dtype>* const blob_top_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
   vector<Blob<Dtype>*> blob_top_vec_;
+
+  void TestDropoutForward(const float dropout_ratio) {
+    LayerParameter layer_param;
+    // Fill in the given dropout_ratio, unless it's 0.5, in which case we don't
+    // set it explicitly to test that 0.5 is the default.
+    if (dropout_ratio != 0.5) {
+      layer_param.mutable_dropout_param()->set_dropout_ratio(dropout_ratio);
+    }
+    Caffe::set_phase(Caffe::TRAIN);
+    DropoutLayer<Dtype> layer(layer_param);
+    layer.SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
+    layer.Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+    // Now, check values
+    const Dtype* bottom_data = this->blob_bottom_->cpu_data();
+    const Dtype* top_data = this->blob_top_->cpu_data();
+    float scale = 1. / (1. - layer_param.dropout_param().dropout_ratio());
+    const int count = this->blob_bottom_->count();
+    // Initialize num_kept to count the number of inputs NOT dropped out.
+    int num_kept = 0;
+    for (int i = 0; i < count; ++i) {
+      if (top_data[i] != 0) {
+        ++num_kept;
+        EXPECT_EQ(top_data[i], bottom_data[i] * scale);
+      }
+    }
+    const Dtype std_error = sqrt(dropout_ratio * (1 - dropout_ratio) / count);
+    // Fail if the number dropped was more than 1.96 * std_error away from the
+    // expected number -- requires 95% confidence that the dropout layer is not
+    // obeying the given dropout_ratio for test failure.
+    const Dtype empirical_dropout_ratio = 1 - num_kept / Dtype(count);
+    EXPECT_NEAR(empirical_dropout_ratio, dropout_ratio, 1.96 * std_error);
+  }
 };
 
 TYPED_TEST_CASE(NeuronLayerTest, TestDtypesAndDevices);
+
+TYPED_TEST(NeuronLayerTest, TestAbsVal) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  AbsValLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
+  layer.Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+  const Dtype* bottom_data = this->blob_bottom_->cpu_data();
+  const Dtype* top_data    = this->blob_top_->cpu_data();
+  const int count = this->blob_bottom_->count();
+  for (int i = 0; i < count; ++i) {
+    EXPECT_EQ(top_data[i], fabs(bottom_data[i]));
+  }
+}
+
+TYPED_TEST(NeuronLayerTest, TestAbsGradient) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  AbsValLayer<Dtype> layer(layer_param);
+  GradientChecker<Dtype> checker(1e-2, 1e-3, 1701, 0., 0.01);
+  checker.CheckGradientEltwise(&layer, &(this->blob_bottom_vec_),
+      &(this->blob_top_vec_));
+}
 
 TYPED_TEST(NeuronLayerTest, TestReLU) {
   typedef typename TypeParam::Dtype Dtype;
@@ -114,22 +169,14 @@ TYPED_TEST(NeuronLayerTest, TestSigmoidGradient) {
       &(this->blob_top_vec_));
 }
 
-TYPED_TEST(NeuronLayerTest, TestDropout) {
-  typedef typename TypeParam::Dtype Dtype;
-  LayerParameter layer_param;
-  Caffe::set_phase(Caffe::TRAIN);
-  DropoutLayer<Dtype> layer(layer_param);
-  layer.SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
-  layer.Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
-  // Now, check values
-  const Dtype* bottom_data = this->blob_bottom_->cpu_data();
-  const Dtype* top_data = this->blob_top_->cpu_data();
-  float scale = 1. / (1. - layer_param.dropout_param().dropout_ratio());
-  for (int i = 0; i < this->blob_bottom_->count(); ++i) {
-    if (top_data[i] != 0) {
-      EXPECT_EQ(top_data[i], bottom_data[i] * scale);
-    }
-  }
+TYPED_TEST(NeuronLayerTest, TestDropoutHalf) {
+  const float kDropoutRatio = 0.5;
+  this->TestDropoutForward(kDropoutRatio);
+}
+
+TYPED_TEST(NeuronLayerTest, TestDropoutThreeQuarters) {
+  const float kDropoutRatio = 0.75;
+  this->TestDropoutForward(kDropoutRatio);
 }
 
 TYPED_TEST(NeuronLayerTest, TestDropoutTestPhase) {

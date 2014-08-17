@@ -9,9 +9,8 @@
 namespace caffe {
 
 template <typename Dtype>
-void SpatialPyramidPoolingLayer<Dtype>::SetUp(
+void SpatialPyramidPoolingLayer<Dtype>::LayerSetUp(
     const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   num_pyramid_levels_ =
       this->layer_param_.spatial_pyramid_pooling_param().spatial_bin_size();
   CHECK_GE(num_pyramid_levels_, 1);
@@ -112,7 +111,7 @@ void SpatialPyramidPoolingLayer<Dtype>::setROI(int roi_start_h, int roi_start_w,
 }
 
 template <typename Dtype>
-Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
+void SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, vector<Blob<Dtype>*>* top) {
   Dtype loss = 0;
   if (num_pyramid_levels_ > 1) {
@@ -127,7 +126,6 @@ Dtype SpatialPyramidPoolingLayer<Dtype>::Forward_cpu(
   } else {
     loss = pyramid_levels_[0]->Forward(bottom, top);
   }
-  return Dtype(0);
 }
 
 template <typename Dtype>

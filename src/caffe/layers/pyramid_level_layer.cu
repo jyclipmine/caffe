@@ -52,7 +52,7 @@ __global__ void MaxPoolForward(const int nthreads, const Dtype* bottom_data,
 }
 
 template <typename Dtype>
-Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = (*top)[0]->mutable_gpu_data();
@@ -85,7 +85,6 @@ Dtype PyramidLevelLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     LOG(FATAL) << "Unknown pooling method.";
   }
   CUDA_POST_KERNEL_CHECK;
-  return Dtype(0.);
 }
 
 

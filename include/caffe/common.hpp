@@ -1,16 +1,25 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_COMMON_HPP_
 #define CAFFE_COMMON_HPP_
 
 #include <boost/shared_ptr.hpp>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 
+#include <cmath>
 #include <map>
 #include <set>
 #include <string>
 
 #include "caffe/util/device_alternate.hpp"
+
+// gflags 2.1 issue: namespace google was changed to gflags without warning.
+// Luckily we will be able to use GFLAGS_GFAGS_H_ to detect if it is version
+// 2.1. If yes , we will add a temporary solution to redirect the namespace.
+// TODO(Yangqing): Once gflags solves the problem in a more elegant way, let's
+// remove the following hack.
+#ifndef GFLAGS_GFLAGS_H_
+namespace gflags = google;
+#endif  // GFLAGS_GFLAGS_H_
 
 // Disable the copy and assignment operator for a class.
 #define DISABLE_COPY_AND_ASSIGN(classname) \
@@ -71,6 +80,7 @@ using boost::shared_ptr;
 // Common functions and classes from std that caffe often uses.
 using std::fstream;
 using std::ios;
+using std::isnan;
 using std::iterator;
 using std::make_pair;
 using std::map;

@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_UTIL_DEVICE_ALTERNATE_H_
 #define CAFFE_UTIL_DEVICE_ALTERNATE_H_
 
@@ -13,7 +11,7 @@
 
 #define STUB_GPU(classname) \
 template <typename Dtype> \
-Dtype classname<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, \
+void classname<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, \
     vector<Blob<Dtype>*>* top) { NO_GPU; } \
 template <typename Dtype> \
 void classname<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top, \
@@ -22,7 +20,7 @@ void classname<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top, \
 
 #define STUB_GPU_FORWARD(classname, funcname) \
 template <typename Dtype> \
-Dtype classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& bottom, \
+void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& bottom, \
     vector<Blob<Dtype>*>* top) { NO_GPU; } \
 
 #define STUB_GPU_BACKWARD(classname, funcname) \

@@ -1,15 +1,14 @@
-// Copyright 2014 BVLC and contributors.
 //
 // Based on data_layer.cpp by Yangqing Jia.
 
 #include <stdint.h>
 
 #include <algorithm>
-#include <string>
-#include <vector>
-#include <map>
 #include <fstream>  // NOLINT(readability/streams)
+#include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -247,10 +246,9 @@ WindowDataLayer<Dtype>::~WindowDataLayer<Dtype>() {
 }
 
 template <typename Dtype>
-void WindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void WindowDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
-  // SetUp runs through the window_file and creates two structures
+  // LayerSetUp runs through the window_file and creates two structures
   // that hold windows: one for foreground (object) windows and one
   // for background (non-object) windows. We use an overlap threshold
   // to decide which is which.
@@ -427,7 +425,7 @@ unsigned int WindowDataLayer<Dtype>::PrefetchRand() {
 }
 
 template <typename Dtype>
-Dtype WindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void WindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
   JoinPrefetchThread();
@@ -438,7 +436,6 @@ Dtype WindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
              (*top)[1]->mutable_cpu_data());
   // Start a new prefetch thread
   CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 #ifdef CPU_ONLY

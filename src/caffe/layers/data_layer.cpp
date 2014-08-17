@@ -1,17 +1,15 @@
-// Copyright 2014 BVLC and contributors.
-
-#include <stdint.h>
 #include <leveldb/db.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>
 
 #include "caffe/layer.hpp"
+#include "caffe/proto/caffe.pb.h"
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
 #include "caffe/vision_layers.hpp"
-#include "caffe/proto/caffe.pb.h"
 
 namespace caffe {
 
@@ -162,9 +160,8 @@ DataLayer<Dtype>::~DataLayer<Dtype>() {
 }
 
 template <typename Dtype>
-void DataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void DataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   if (top->size() == 1) {
     output_labels_ = false;
   } else {
@@ -175,9 +172,8 @@ void DataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
   case DataParameter_DB_LEVELDB:
     {
     leveldb::DB* db_temp;
-    leveldb::Options options;
+    leveldb::Options options = GetLevelDBOptions();
     options.create_if_missing = false;
-    options.max_open_files = 100;
     LOG(INFO) << "Opening leveldb " << this->layer_param_.data_param().source();
     leveldb::Status status = leveldb::DB::Open(
         options, this->layer_param_.data_param().source(), &db_temp);
@@ -335,7 +331,7 @@ unsigned int DataLayer<Dtype>::PrefetchRand() {
 }
 
 template <typename Dtype>
-Dtype DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
   JoinPrefetchThread();
@@ -348,7 +344,6 @@ Dtype DataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   }
   // Start a new prefetch thread
   CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 #ifdef CPU_ONLY

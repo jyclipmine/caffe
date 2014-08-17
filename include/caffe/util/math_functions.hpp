@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_UTIL_MATH_FUNCTIONS_H_
 #define CAFFE_UTIL_MATH_FUNCTIONS_H_
 
@@ -8,6 +6,7 @@
 
 #include "glog/logging.h"
 
+#include "caffe/common.hpp"
 #include "caffe/util/device_alternate.hpp"
 #include "caffe/util/mkl_alternate.hpp"
 
@@ -39,6 +38,10 @@ void caffe_copy(const int N, const Dtype *X, Dtype *Y);
 
 template <typename Dtype>
 void caffe_set(const int N, const Dtype alpha, Dtype *X);
+
+inline void caffe_memset(const size_t N, const int alpha, void* X) {
+  memset(X, alpha, N);  // NOLINT(caffe/alt_fn)
+}
 
 template <typename Dtype>
 void caffe_add_scalar(const int N, const Dtype alpha, Dtype *X);
@@ -84,6 +87,9 @@ void caffe_rng_bernoulli(const int n, const Dtype p, unsigned int* r);
 
 template <typename Dtype>
 void caffe_exp(const int n, const Dtype* a, Dtype* y);
+
+template <typename Dtype>
+void caffe_abs(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>
 Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
@@ -167,6 +173,14 @@ void caffe_gpu_memcpy(const size_t N, const void *X, void *Y);
 template <typename Dtype>
 void caffe_gpu_set(const int N, const Dtype alpha, Dtype *X);
 
+inline void caffe_gpu_memset(const size_t N, const int alpha, void* X) {
+#ifndef CPU_ONLY
+  CUDA_CHECK(cudaMemset(X, alpha, N));  // NOLINT(caffe/alt_fn)
+#else
+  NO_GPU;
+#endif
+}
+
 template <typename Dtype>
 void caffe_gpu_add_scalar(const int N, const Dtype alpha, Dtype *X);
 
@@ -184,6 +198,9 @@ void caffe_gpu_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_div(const int N, const Dtype* a, const Dtype* b, Dtype* y);
+
+template <typename Dtype>
+void caffe_gpu_abs(const int n, const Dtype* a, Dtype* y);
 
 template <typename Dtype>
 void caffe_gpu_powx(const int n, const Dtype* a, const Dtype b, Dtype* y);

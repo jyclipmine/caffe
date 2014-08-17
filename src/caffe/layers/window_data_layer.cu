@@ -1,9 +1,8 @@
-// Copyright 2014 BVLC and contributors.
 //
 // Based on data_layer.cpp by Yangqing Jia.
 
-#include <stdint.h>
 #include <pthread.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>
@@ -19,7 +18,7 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype WindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void WindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // First, join the thread
   JoinPrefetchThread();
@@ -30,7 +29,6 @@ Dtype WindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       (*top)[1]->mutable_gpu_data());
   // Start a new prefetch thread
   CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(WindowDataLayer);

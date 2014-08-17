@@ -1,5 +1,3 @@
-// Copyright 2014 BVLC and contributors.
-
 #ifndef CAFFE_NEURON_LAYERS_HPP_
 #define CAFFE_NEURON_LAYERS_HPP_
 
@@ -7,9 +5,9 @@
 #include <utility>
 #include <vector>
 
-#include "pthread.h"
 #include "boost/scoped_ptr.hpp"
 #include "hdf5.h"
+#include "pthread.h"
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -30,7 +28,7 @@ class NeuronLayer : public Layer<Dtype> {
  public:
   explicit NeuronLayer(const LayerParameter& param)
      : Layer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -38,6 +36,36 @@ class NeuronLayer : public Layer<Dtype> {
   }
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
+};
+
+/* AbsVal Layer
+  y = |x|
+
+  y' = 1    if x > 0
+     = -1   if x < 0
+*/
+template <typename Dtype>
+class AbsValLayer : public NeuronLayer<Dtype> {
+ public:
+  explicit AbsValLayer(const LayerParameter& param)
+      : NeuronLayer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+
+  virtual inline LayerParameter_LayerType type() const {
+    return LayerParameter_LayerType_ABSVAL;
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      vector<Blob<Dtype>*>* top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
 };
 
 /* BNLLLayer
@@ -58,9 +86,9 @@ class BNLLLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -83,7 +111,7 @@ class DropoutLayer : public NeuronLayer<Dtype> {
  public:
   explicit DropoutLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -91,9 +119,9 @@ class DropoutLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -117,7 +145,7 @@ class PowerLayer : public NeuronLayer<Dtype> {
  public:
   explicit PowerLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -125,9 +153,9 @@ class PowerLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -160,9 +188,9 @@ class ReLULayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
@@ -193,9 +221,9 @@ class SigmoidLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -221,9 +249,9 @@ class TanHLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
@@ -233,12 +261,12 @@ class TanHLayer : public NeuronLayer<Dtype> {
 
 /* ThresholdLayer
   Outputs 1 if value in input is above threshold, 0 otherwise.
-  The defult threshold = 0, which means positive values would become 1 and 
+  The defult threshold = 0, which means positive values would become 1 and
   negative or 0, would become 0
 
   y = 1 if x > threshold
   y = 0 if x <= threshold
-  
+
   y' = don't differenciable
 */
 template <typename Dtype>
@@ -246,7 +274,7 @@ class ThresholdLayer : public NeuronLayer<Dtype> {
  public:
   explicit ThresholdLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
-  virtual void SetUp(const vector<Blob<Dtype>*>& bottom,
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
 
   virtual inline LayerParameter_LayerType type() const {
@@ -254,9 +282,9 @@ class ThresholdLayer : public NeuronLayer<Dtype> {
   }
 
  protected:
-  virtual Dtype Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
-  virtual Dtype Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {

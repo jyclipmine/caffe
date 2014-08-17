@@ -1,20 +1,17 @@
-// Copyright 2014 BVLC and contributors.
-
 #include <vector>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
 #include "caffe/filler.hpp"
 #include "caffe/layer.hpp"
-#include "caffe/vision_layers.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/vision_layers.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
-void InnerProductLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   const int num_output = this->layer_param_.inner_product_param().num_output();
   bias_term_ = this->layer_param_.inner_product_param().bias_term();
   // Figure out the dimensions
@@ -54,7 +51,7 @@ void InnerProductLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();
   Dtype* top_data = (*top)[0]->mutable_cpu_data();
@@ -66,7 +63,6 @@ Dtype InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         bias_multiplier_.cpu_data(),
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
-  return Dtype(0);
 }
 
 template <typename Dtype>

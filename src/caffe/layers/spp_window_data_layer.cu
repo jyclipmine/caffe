@@ -23,7 +23,7 @@ using std::pair;
 namespace caffe {
 
 template <typename Dtype>
-Dtype SPPWindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void SPPWindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // Fetch data in main thread
   SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
@@ -37,7 +37,6 @@ Dtype SPPWindowDataLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       (*top)[1]->mutable_gpu_data());
   // Start a new prefetch thread
   // CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(SPPWindowDataLayer);

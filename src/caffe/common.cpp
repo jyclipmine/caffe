@@ -1,23 +1,9 @@
-// Copyright 2014 BVLC and contributors.
-
-#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <cstdio>
 #include <ctime>
 
 #include "caffe/common.hpp"
 #include "caffe/util/rng.hpp"
-
-// gflags 2.1 issue: namespace google was changed to gflags without warning.
-// Luckily we will be able to use GFLAGS_GFAGS_H_ to detect if it is version
-// 2.1. If yes , we will add a temporary solution to redirect the namespace.
-// TODO(Yangqing): Once gflags solves the problem in a more elegant way, let's
-// remove the following hack.
-#ifdef GFLAGS_GFLAGS_H_
-namespace google {
-using ::gflags::ParseCommandLineFlags;
-}  // namespace google
-#endif  // GFLAGS_GFLAGS_H_
 
 namespace caffe {
 
@@ -26,6 +12,17 @@ shared_ptr<Caffe> Caffe::singleton_;
 // random seeding
 int64_t cluster_seedgen(void) {
   int64_t s, seed, pid;
+  FILE* f = fopen("/dev/urandom", "rb");
+  if (f && fread(&seed, 1, sizeof(seed), f) == sizeof(seed)) {
+    fclose(f);
+    return seed;
+  }
+
+  LOG(INFO) << "System entropy source not available, "
+              "using fallback algorithm to generate seed instead.";
+  if (f)
+    fclose(f);
+
   pid = getpid();
   s = time(NULL);
   seed = abs(((s * 181) * ((pid - 83) * 359)) % 104729);
@@ -35,7 +32,7 @@ int64_t cluster_seedgen(void) {
 
 void GlobalInit(int* pargc, char*** pargv) {
   // Google flags.
-  ::google::ParseCommandLineFlags(pargc, pargv, true);
+  ::gflags::ParseCommandLineFlags(pargc, pargv, true);
   // Google logging.
   ::google::InitGoogleLogging(*(pargv)[0]);
 }
@@ -75,7 +72,7 @@ Caffe::RNG::RNG() : generator_(new Generator()) { }
 Caffe::RNG::RNG(unsigned int seed) : generator_(new Generator(seed)) { }
 
 Caffe::RNG& Caffe::RNG::operator=(const RNG& other) {
-  generator_.reset(other.generator_.get());
+  generator_ = other.generator_;
   return *this;
 }
 

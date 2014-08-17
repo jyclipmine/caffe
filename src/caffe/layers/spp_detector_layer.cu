@@ -16,7 +16,7 @@
 namespace caffe {
 
 template <typename Dtype>
-Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+void SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* conv_windows = bottom[1]->cpu_data();
   const Dtype* conv_scales = bottom[2]->cpu_data();
@@ -48,7 +48,6 @@ Dtype SPPDetectorLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
         (*top)[0]->mutable_gpu_data() + spp5_dim_ * n);
   }
   LOG(INFO) << "Forwarding " << n << " boxes in this batch";
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(SPPDetectorLayer);

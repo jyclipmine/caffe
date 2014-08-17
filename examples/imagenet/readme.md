@@ -4,6 +4,7 @@ description: Train and test "CaffeNet" on ImageNet challenge data.
 category: example
 include_in_docs: true
 layout: default
+priority: 1
 ---
 
 Yangqing's Recipe on Brewing ImageNet
@@ -12,7 +13,7 @@ Yangqing's Recipe on Brewing ImageNet
     "All your braincells are belong to us."
         - Caffeine
 
-We are going to describe a reference implementation for the approach first proposed by Krizhevsky, Sutskever, and Hinton in their [NIPS 2012 paper](http://books.nips.cc/papers/files/nips25/NIPS2012_0534.pdf). Since training the whole model takes some time and energy, we provide a model, trained in the same way as we describe here, to help fight global warming. If you would like to simply use the pretrained model, check out the [Pretrained ImageNet](getting_pretrained_models.html) page. *Note that the pretrained model is for academic research / non-commercial use only*.
+We are going to describe a reference implementation for the approach first proposed by Krizhevsky, Sutskever, and Hinton in their [NIPS 2012 paper](http://books.nips.cc/papers/files/nips25/NIPS2012_0534.pdf). Since training the whole model takes some time and energy, we provide a model, trained in the same way as we describe here, to help fight global warming. If you would like to simply use the pretrained model, check out the [Pretrained ImageNet](../../getting_pretrained_models.html) page. *Note that the pretrained model is for academic research / non-commercial use only*.
 
 To clarify, by ImageNet we actually mean the ILSVRC12 challenge, but you can easily train on the whole of ImageNet as well, just with more disk space, and a little longer training time.
 
@@ -41,7 +42,8 @@ You may want to resize the images to 256x256 in advance. By default, we do not e
 
 Go to `$CAFFE_ROOT/examples/imagenet/` for the rest of this guide.
 
-Take a look at `create_imagenet.sh`. Set the paths to the train and val dirs as needed, and set "RESIZE=true" to resize all images to 256x256 if you haven't resized the images in advance. Now simply create the leveldbs with `./create_imagenet.sh`. Note that `ilsvrc12_train_leveldb` and `ilsvrc12_val_leveldb` should not exist before this execution. It will be created by the script. `GLOG_logtostderr=1` simply dumps more information for you to inspect, and you can safely ignore it.
+Take a look at `create_imagenet.sh`. Set the paths to the train and val dirs as needed, and set "RESIZE=true" to resize all images to 256x256 if you haven't resized the images in advance.
+Now simply create the leveldbs with `./create_imagenet.sh`. Note that `ilsvrc12_train_leveldb` and `ilsvrc12_val_leveldb` should not exist before this execution. It will be created by the script. `GLOG_logtostderr=1` simply dumps more information for you to inspect, and you can safely ignore it.
 
 Compute Image Mean
 ------------------
@@ -55,17 +57,22 @@ which will make `data/ilsvrc12/imagenet_mean.binaryproto`.
 Network Definition
 ------------------
 
-The network definition follows strictly the one in Krizhevsky et al. You can find the detailed definition at `examples/imagenet/imagenet_train.prototxt`. Note the paths in the data layer - if you have not followed the exact paths in this guide you will need to change the following lines:
+The network definition follows strictly the one in Krizhevsky et al. You can find the detailed definition at `examples/imagenet/imagenet_train_val.prototxt`. Note the paths in the data layer --- if you have not followed the exact paths in this guide you will need to change the following lines:
 
     source: "ilvsrc12_train_leveldb"
     mean_file: "../../data/ilsvrc12/imagenet_mean.binaryproto"
 
-to point to your own leveldb and image mean. Likewise, do the same for `examples/imagenet/imagenet_val.prototxt`.
+to point to your own leveldb and image mean.
 
-If you look carefully at `imagenet_train.prototxt` and `imagenet_val.prototxt`, you will notice that they are largely the same, with the only difference being the data layer sources, and the last layer: in training, we will be using a `softmax_loss` layer to compute the loss function and to initialize the backpropagation, while in validation we will be using an `accuracy` layer to inspect how well we do in terms of accuracy.
+If you look carefully at `imagenet_train_val.prototxt`, you will notice several `include` sections specifying either `phase: TRAIN` or `phase: TEST`. These sections allow us to define two closely related networks in one file: the network used for training and the network used for testing. These two networks are almost identical, sharing all layers except for those marked with `include { phase: TRAIN }` or `include { phase: TEST }`. In this case, only the input layers and one output layer are different.
+
+**Input layer differences:** The training network's `data` input layer draws its data from `ilsvrc12_train_leveldb` and randomly mirrors the input image. The testing network's `data` layer takes data from `ilsvrc12_val_leveldb` and does not perform random mirroring.
+
+**Output layer differences:** Both networks output the `softmax_loss` layer, which in training is used to compute the loss function and to initialize the backpropagation, while in validation this loss is simply reported. The testing network also has a second output layer, `accuracy`, which is used to report the accuracy on the test set. In the process of training, the test network will occasionally be instantiated and tested on the test set, producing lines like `Test score #0: xxx` and `Test score #1: xxx`. In this case score 0 is the accuracy (which will start around 1/1000 = 0.001 for an untrained network) and score 1 is the loss (which will start around 7 for an untrained network).
 
 We will also lay out a protocol buffer for running the solver. Let's make a few plans:
-* We will run in batches of 256, and run a total of 4,500,000 iterations (about 90 epochs).
+
+* We will run in batches of 256, and run a total of 450,000 iterations (about 90 epochs).
 * For every 1,000 iterations, we test the learned net on the validation data.
 * We set the initial learning rate to 0.01, and decrease it every 100,000 iterations (about 20 epochs).
 * Information will be displayed every 20 epochs.
@@ -101,4 +108,4 @@ Parting Words
 
 Hope you liked this recipe! Many researchers have gone further since the ILSVRC 2012 challenge, changing the network architecture and/or finetuning the various parameters in the network. The recent ILSVRC 2013 challenge suggests that there are quite some room for improvement. **Caffe allows one to explore different network choices  more easily, by simply writing different prototxt files** - isn't that exciting?
 
-And since now you have a trained network, check out how to use it: [Running Pretrained ImageNet](getting_pretrained_models.html). This time we will use Python, but if you have wrappers for other languages, please kindly send a pull request!
+And since now you have a trained network, check out how to use it: [Running Pretrained ImageNet](../../getting_pretrained_models.html). This time we will use Python, but if you have wrappers for other languages, please kindly send a pull request!

@@ -29,7 +29,6 @@ template <typename Dtype>
 void* SPPWindowDataLayerPrefetch(void* layer_pointer) {
   SPPWindowDataLayer<Dtype>* layer =
       reinterpret_cast<SPPWindowDataLayer<Dtype>*>(layer_pointer);
-
   Dtype* top_data = layer->prefetch_data_->mutable_cpu_data();
   Dtype* top_label = layer->prefetch_label_->mutable_cpu_data();
   // zero out batch
@@ -96,9 +95,9 @@ SPPWindowDataLayer<Dtype>::~SPPWindowDataLayer<Dtype>() {
 }
 
 template <typename Dtype>
-void SPPWindowDataLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void SPPWindowDataLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
+  
   // SetUp runs through the window_file and creates two structures
   // that hold windows: one for foreground (object) windows and one
   // for background (non-object) windows. We use an overlap threshold
@@ -190,7 +189,7 @@ unsigned int SPPWindowDataLayer<Dtype>::PrefetchRand() {
 }
 
 template <typename Dtype>
-Dtype SPPWindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void SPPWindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   // Fetch data in main thread
   SPPWindowDataLayerPrefetch<Dtype>(static_cast<void*>(this));
@@ -204,7 +203,6 @@ Dtype SPPWindowDataLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
              (*top)[1]->mutable_cpu_data());
   // Start a new prefetch thread
   // CreatePrefetchThread();
-  return Dtype(0.);
 }
 
 INSTANTIATE_CLASS(SPPWindowDataLayer);

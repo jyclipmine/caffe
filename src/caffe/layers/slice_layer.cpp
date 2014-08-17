@@ -1,18 +1,15 @@
-// Copyright 2014 BVLC and contributors.
-
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 #include "caffe/layer.hpp"
-#include "caffe/vision_layers.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "caffe/vision_layers.hpp"
 
 namespace caffe {
 
 template <typename Dtype>
-void SliceLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
+void SliceLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  Layer<Dtype>::SetUp(bottom, top);
   const SliceParameter& slice_param = this->layer_param_.slice_param();
   slice_dim_ = slice_param.slice_dim();
   CHECK_GE(slice_dim_, 0);
@@ -75,7 +72,7 @@ void SliceLayer<Dtype>::SetUp(const vector<Blob<Dtype>*>& bottom,
 }
 
 template <typename Dtype>
-Dtype SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+void SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
   const Dtype* bottom_data = bottom[0]->mutable_cpu_data();
   if (slice_dim_ == 0) {
@@ -100,7 +97,6 @@ Dtype SliceLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       offset_channel += blob->channels();
     }
   }  // slice_dim_ is guaranteed to be 0 or 1 by SetUp.
-  return Dtype(0.);
 }
 
 template <typename Dtype>

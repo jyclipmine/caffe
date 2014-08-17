@@ -62,6 +62,7 @@ NONGEN_CXX_SRCS := $(shell find \
 	examples \
 	tools \
 	-name "*.cpp" -or -name "*.hpp" -or -name "*.cu" -or -name "*.cuh")
+LINT_SCRIPT := scripts/cpp_lint.py
 LINT_OUTPUT_DIR := $(BUILD_DIR)/.lint
 LINT_EXT := lint.txt
 LINT_OUTPUTS := $(addsuffix .$(LINT_EXT), $(addprefix $(LINT_OUTPUT_DIR)/, $(NONGEN_CXX_SRCS)))
@@ -296,7 +297,7 @@ SUPERCLEAN_EXTS := .so .a .o .bin .testbin .pb.cc .pb.h _pb2.py .cuo
 ##############################
 # Define build targets
 ##############################
-.PHONY: all test clean linecount lint tools examples $(DIST_ALIASES) \
+.PHONY: all test clean linecount lint lintclean tools examples $(DIST_ALIASES) \
 	py mat py$(PROJECT) mat$(PROJECT) proto runtest \
 	superclean supercleanlist supercleanfiles warn everything
 
@@ -309,6 +310,9 @@ linecount:
 
 lint: $(EMPTY_LINT_REPORT)
 
+lintclean:
+	@ $(RM) -r $(LINT_OUTPUT_DIR) $(EMPTY_LINT_REPORT) $(NONEMPTY_LINT_REPORT)
+
 $(EMPTY_LINT_REPORT): $(LINT_OUTPUTS) | $(BUILD_DIR)
 	@ cat $(LINT_OUTPUTS) > $@
 	@ if [ -s "$@" ]; then \
@@ -320,9 +324,9 @@ $(EMPTY_LINT_REPORT): $(LINT_OUTPUTS) | $(BUILD_DIR)
 	  $(RM) $(NONEMPTY_LINT_REPORT); \
 	  echo "No lint errors!";
 
-$(LINT_OUTPUTS): $(LINT_OUTPUT_DIR)/%.lint.txt : % | $(LINT_OUTPUT_DIR)
+$(LINT_OUTPUTS): $(LINT_OUTPUT_DIR)/%.lint.txt : % $(LINT_SCRIPT) | $(LINT_OUTPUT_DIR)
 	@ mkdir -p $(dir $@)
-	@ python ./scripts/cpp_lint.py $< 2>&1 \
+	@ python $(LINT_SCRIPT) $< 2>&1 \
 		| grep -v "^Done processing " \
 		| grep -v "^Total errors found: 0" \
 		> $@ \
@@ -556,6 +560,8 @@ $(DIST_ALIASES): $(DISTRIBUTE_DIR)
 $(DISTRIBUTE_DIR): all py $(HXX_SRCS) | $(DISTRIBUTE_SUBDIRS)
 	# add include
 	cp -r include $(DISTRIBUTE_DIR)/
+	mkdir -p $(DISTRIBUTE_DIR)/include/caffe/proto
+	cp $(PROTO_GEN_HEADER_SRCS) $(DISTRIBUTE_DIR)/include/caffe/proto
 	# add tool and example binaries
 	cp $(TOOL_BINS) $(DISTRIBUTE_DIR)/bin
 	cp $(EXAMPLE_BINS) $(DISTRIBUTE_DIR)/bin
