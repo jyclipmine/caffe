@@ -27,6 +27,8 @@ Layer<Dtype>* GetLayer(const LayerParameter& param) {
     return new BNLLLayer<Dtype>(param);
   case LayerParameter_LayerType_CONCAT:
     return new ConcatLayer<Dtype>(param);
+  case LayerParameter_LayerType_CONTEXT_WINDOW_DATA:
+    return new ContextWindowDataLayer<Dtype>(param);
   case LayerParameter_LayerType_CONVOLUTION:
     return new ConvolutionLayer<Dtype>(param);
   case LayerParameter_LayerType_DATA:

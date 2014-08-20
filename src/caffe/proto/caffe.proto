@@ -218,6 +218,7 @@ message LayerParameter {
     ARGMAX = 30;
     BNLL = 2;
     CONCAT = 3;
+      CONTEXT_WINDOW_DATA = 139;
     CONVOLUTION = 4;
     DATA = 5;
     DROPOUT = 6;
