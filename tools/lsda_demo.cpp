@@ -24,20 +24,22 @@ const IplImage* read_from_camera(CvCapture* pCapture);
 void Mat2float(float image_data[], const Mat& img, const float channel_mean[]);
 void load_channel_mean(float channel_mean[], const char* filename);
 void load_class_name(vector<string>& class_name_vec, const char* filename);
-void load_class_mask(float class_mask[]);
-void draw_results(Mat& img, const float result_vecs[], float boxes[],
-    int max_proposal_num, vector<string>& class_name_vec);
-const float* forward_network(Net<float>& net, float image_data[],
+void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
+    const float score_vec[], float boxes[], int max_proposal_num,
+    vector<string>& class_name_vec);
+const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
     float conv5_windows[], float conv5_scales[], float boxes[],
-    float class_mask[], const int class_num, const int max_proposal_num,
+    float valid_vec[], const int class_num, const int max_proposal_num,
     const Mat& img);
 
 void boxes2conv5(const float boxes[], const int max_proposal_num,
-    const int proposal_num, float conv5_windows[], float conv5_scales[]) {
+    const int proposal_num, float conv5_windows[], float conv5_scales[],
+    float valid_vec[]) {
   const int conv5_stride = 16;
   // calculate the corresponing windows on conv5 feature map
   // zero out the boxes
   memset(conv5_windows, 0, max_proposal_num * 4 * sizeof(float));
+  memset(valid_vec, 0, max_proposal_num * sizeof(float));
   for (int i = 0; i < proposal_num; i++) {
     float y1 = boxes[4*i];
     float x1 = boxes[4*i+1];
@@ -48,6 +50,7 @@ void boxes2conv5(const float boxes[], const int max_proposal_num,
     conv5_windows[4*i+1] = static_cast<int>(0.5f + x1 / conv5_stride);
     conv5_windows[4*i+2] = static_cast<int>(0.5f + y2 / conv5_stride) + 1;
     conv5_windows[4*i+3] = static_cast<int>(0.5f + x2 / conv5_stride) + 1;
+    valid_vec[i] = 1;
   }
   // for now, set all scales to be zero
   memset(conv5_scales, 0, max_proposal_num * sizeof(float));
@@ -67,10 +70,10 @@ int main(int argc, char** argv) {
   // Storage
   float boxes[max_proposal_num*4];
   float conv5_windows[max_proposal_num*4];
-  float conv5_scales[max_proposal_num*4];
+  float conv5_scales[max_proposal_num];
   float image_data[image_h*image_w*3];
+  float valid_vec[max_proposal_num];
   float channel_mean[3];
-  float class_mask[class_num];
   
   // Initialize network
   Caffe::set_phase(Caffe::TEST);
@@ -83,7 +86,6 @@ int main(int argc, char** argv) {
   // Load data from disk
   load_channel_mean(channel_mean, argv[3]);
   load_class_name(class_name_vec, argv[4]);
-  load_class_mask(class_mask);
   
   // timing
   clock_t start, finish;
@@ -105,7 +107,7 @@ int main(int argc, char** argv) {
     start = clock();
     int proposal_num = bing_boxes(img, boxes, max_proposal_num);
     boxes2conv5(boxes, max_proposal_num, proposal_num, conv5_windows,
-        conv5_scales);
+        conv5_scales, valid_vec);
     finish = clock();
     LOG(INFO) << "Run BING: " << (1000 * (finish - start) / CLOCKS_PER_SEC)
         << " ms, got " << proposal_num << " boxes";
@@ -117,15 +119,19 @@ int main(int argc, char** argv) {
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    const float* result_vecs = forward_network(caffe_test_net, image_data,
-        conv5_windows, conv5_scales, boxes, class_mask, class_num,
+    const vector<Blob<float>*>& result = forward_network(caffe_test_net,
+        image_data, conv5_windows, conv5_scales, boxes, valid_vec, class_num,
         max_proposal_num, img);
+    const float* keep_vec = result[0]->cpu_data();
+    const float* class_id_vec = result[1]->cpu_data();
+    const float* score_vec = result[2]->cpu_data();
     finish = clock();
     LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
 
     start = clock();
-    draw_results(img, result_vecs, boxes, max_proposal_num, class_name_vec);
+    draw_results(img, keep_vec, class_id_vec, score_vec, boxes,
+        max_proposal_num, class_name_vec);
     imshow("detection results", img);
     finish = clock();
     finish_all = finish;
@@ -183,14 +189,9 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   fin.close();
 }
 
-void load_class_mask(float class_mask[]) {
-  for (int i = 0; i < 7405; i++)
-    class_mask[i] = 1;
-}
-
-const float* forward_network(Net<float>& net, float image_data[],
+const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
     float conv5_windows[], float conv5_scales[], float boxes[],
-    float class_mask[], const int class_num, const int max_proposal_num,
+    float valid_vec[], const int class_num, const int max_proposal_num,
     const Mat& img) {
   vector<Blob<float>*>& input_blobs = net.input_blobs();
   CHECK_EQ(input_blobs[0]->count(), img.rows*img.cols*3)
@@ -201,8 +202,8 @@ const float* forward_network(Net<float>& net, float image_data[],
       << "input conv5_scales mismatch";
   CHECK_EQ(input_blobs[3]->count(), max_proposal_num*4)
       << "input boxes mismatch";
-  CHECK_EQ(input_blobs[4]->count(), class_num)
-      << "input class_mask mismatch";
+  CHECK_EQ(input_blobs[4]->count(), max_proposal_num)
+      << "input valid_vec mismatch";
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
       sizeof(float) * input_blobs[0]->count());
   memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
@@ -211,25 +212,26 @@ const float* forward_network(Net<float>& net, float image_data[],
       sizeof(float) * input_blobs[2]->count());
   memcpy(input_blobs[3]->mutable_cpu_data(), boxes,
       sizeof(float) * input_blobs[3]->count());
-  memcpy(input_blobs[4]->mutable_cpu_data(), class_mask,
+  memcpy(input_blobs[4]->mutable_cpu_data(), valid_vec,
       sizeof(float) * input_blobs[4]->count());
   
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  CHECK_EQ(result[0]->count(), 3 * max_proposal_num)
-      << "input class_mask mismatch";
+  CHECK_EQ(result[0]->count(), max_proposal_num)
+      << "input keep_vec mismatch";
+  CHECK_EQ(result[1]->count(), max_proposal_num)
+      << "input class_id_vec mismatch";
+  CHECK_EQ(result[2]->count(), max_proposal_num)
+      << "input score_vec mismatch";
   return result[0]->cpu_data();
 }
 
-void draw_results(Mat& img, const float result_vecs[], float boxes[],
-    int max_proposal_num, vector<string>& class_name_vec) {
+void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
+    const float score_vec[], float boxes[], int max_proposal_num,
+    vector<string>& class_name_vec) {
   const static CvScalar color = cvScalar(0, 0, 255);
   CvFont font;
   cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1, CV_AA);
-  const float* keep_vec = result_vecs;
-  const float* class_id_vec = result_vecs + max_proposal_num;
-  const float* score_vec = result_vecs + max_proposal_num*2;
   char label[200];
-  
   int obj_num = 0;
   for (int box_id = 0; box_id < max_proposal_num; box_id++) {
     if (keep_vec[box_id]) {
