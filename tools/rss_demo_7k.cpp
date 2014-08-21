@@ -211,9 +211,9 @@ int main(int argc, char** argv) {
     finish_all = finish;
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
-    LOG(INFO) << "\tTotal Time: "
+    LOG(INFO) << "Total Time: "
         << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
-    LOG(INFO) << "\tFrame Rate: "
+    LOG(INFO) << "Frame Rate: "
         << CLOCKS_PER_SEC / float(finish_all - start_all) << " fps";
   }
   return 0;
