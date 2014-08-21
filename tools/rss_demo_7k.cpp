@@ -54,14 +54,14 @@ void boxes2conv5(const float boxes[], const int max_proposal_num,
 }
 
 int main(int argc, char** argv) {
-  CHECK_EQ(argc, 5) << "Input argument number mismatch";
+  CHECK_EQ(argc, 6) << "Input argument number mismatch";
   
   // Parameters
   CvCapture* pCapture = cvCreateCameraCapture(0);
   const int max_proposal_num = 1000;
   const int class_num = 7405;
   const int image_h = 688, image_w = 917;
-  const int device_id = 1;
+  const int device_id = atoi(argv[5]);
   const Size input_size(image_w, image_h);
   
   // Storage
