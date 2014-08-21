@@ -1,0 +1,112 @@
+g++ src/caffe/solver.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/solver.o 2> .build_release/src/caffe/solver.o.warnings.txt \
+		|| (cat .build_release/src/caffe/solver.o.warnings.txt; exit 1)
+
+g++ src/caffe/blob.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/blob.o 2> .build_release/src/caffe/blob.o.warnings.txt \
+		|| (cat .build_release/src/caffe/blob.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/math_functions.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/math_functions.o 2> .build_release/src/caffe/util/math_functions.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/math_functions.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/upgrade_proto.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/upgrade_proto.o 2> .build_release/src/caffe/util/upgrade_proto.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/upgrade_proto.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/insert_splits.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/insert_splits.o 2> .build_release/src/caffe/util/insert_splits.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/insert_splits.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/benchmark.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/benchmark.o 2> .build_release/src/caffe/util/benchmark.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/benchmark.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/im2col.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/im2col.o 2> .build_release/src/caffe/util/im2col.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/im2col.o.warnings.txt; exit 1)
+
+g++ src/caffe/util/io.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/util/io.o 2> .build_release/src/caffe/util/io.o.warnings.txt \
+		|| (cat .build_release/src/caffe/util/io.o.warnings.txt; exit 1)
+
+g++ src/caffe/layer_factory.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layer_factory.o 2> .build_release/src/caffe/layer_factory.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layer_factory.o.warnings.txt; exit 1)
+
+g++ src/caffe/syncedmem.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/syncedmem.o 2> .build_release/src/caffe/syncedmem.o.warnings.txt \
+		|| (cat .build_release/src/caffe/syncedmem.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/threshold_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/threshold_layer.o 2> .build_release/src/caffe/layers/threshold_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/threshold_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/relu_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/relu_layer.o 2> .build_release/src/caffe/layers/relu_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/relu_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/argmax_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/argmax_layer.o 2> .build_release/src/caffe/layers/argmax_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/argmax_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/dropout_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/dropout_layer.o 2> .build_release/src/caffe/layers/dropout_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/dropout_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/inner_product_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/inner_product_layer.o 2> .build_release/src/caffe/layers/inner_product_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/inner_product_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/sigmoid_cross_entropy_loss_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/sigmoid_cross_entropy_loss_layer.o 2> .build_release/src/caffe/layers/sigmoid_cross_entropy_loss_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/sigmoid_cross_entropy_loss_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/pooling_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/pooling_layer.o 2> .build_release/src/caffe/layers/pooling_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/pooling_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/hdf5_data_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/hdf5_data_layer.o 2> .build_release/src/caffe/layers/hdf5_data_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/hdf5_data_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/accuracy_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/accuracy_layer.o 2> .build_release/src/caffe/layers/accuracy_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/accuracy_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/neuron_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/neuron_layer.o 2> .build_release/src/caffe/layers/neuron_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/neuron_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/tanh_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/tanh_layer.o 2> .build_release/src/caffe/layers/tanh_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/tanh_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/bnll_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/bnll_layer.o 2> .build_release/src/caffe/layers/bnll_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/bnll_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/absval_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/absval_layer.o 2> .build_release/src/caffe/layers/absval_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/absval_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/mvn_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/mvn_layer.o 2> .build_release/src/caffe/layers/mvn_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/mvn_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/im2col_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/im2col_layer.o 2> .build_release/src/caffe/layers/im2col_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/im2col_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/multinomial_logistic_loss_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/multinomial_logistic_loss_layer.o 2> .build_release/src/caffe/layers/multinomial_logistic_loss_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/multinomial_logistic_loss_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/window_data_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/window_data_layer.o 2> .build_release/src/caffe/layers/window_data_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/window_data_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/loss_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/loss_layer.o 2> .build_release/src/caffe/layers/loss_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/loss_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/hinge_loss_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/hinge_loss_layer.o 2> .build_release/src/caffe/layers/hinge_loss_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/hinge_loss_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/eltwise_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/eltwise_layer.o 2> .build_release/src/caffe/layers/eltwise_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/eltwise_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/lrn_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/lrn_layer.o 2> .build_release/src/caffe/layers/lrn_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/lrn_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/spp_detector_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/spp_detector_layer.o 2> .build_release/src/caffe/layers/spp_detector_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/spp_detector_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/memory_data_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/memory_data_layer.o 2> .build_release/src/caffe/layers/memory_data_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/memory_data_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/conv_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/conv_layer.o 2> .build_release/src/caffe/layers/conv_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/conv_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/power_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/power_layer.o 2> .build_release/src/caffe/layers/power_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/power_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/split_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/split_layer.o 2> .build_release/src/caffe/layers/split_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/split_layer.o.warnings.txt; exit 1)
+
+g++ src/caffe/layers/nms_layer.cpp -pthread -fPIC -DNDEBUG -O2 -DUSE_MKL -I/usr/include -I/usr/local/include -I/usr/local/anaconda/include -I/usr/local/anaconda/include/python2.7 -I/usr/local/anaconda/lib/python2.7/site-packages/numpy/core/include -I.build_release/src -I./src -I./include -I/usr/local/cuda/include -I/opt/intel/mkl/include -Wall -Wno-sign-compare -c -o .build_release/src/caffe/layers/nms_layer.o 2> .build_release/src/caffe/layers/nms_layer.o.warnings.txt \
+		|| (cat .build_release/src/caffe/layers/nms_layer.o.warnings.txt; exit 1)
+src/caffe/layers/nms_layer.cpp: In member function ‘virtual void caffe::NMSLayer<Dtype>::LayerSetUp(const std::vector<caffe::Blob<Dtype>*>&, std::vector<caffe::Blob<Dtype>*>*)’:
+src/caffe/layers/nms_layer.cpp:43:3: error: ‘keep_vec_per_class_’ was not declared in this scope
