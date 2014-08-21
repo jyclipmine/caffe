@@ -140,34 +140,35 @@ int main(int argc, char** argv) {
   CHECK_EQ(argc, 5) << "Input argument number mismatch";
   
   // Parameters
-	CvCapture* pCapture = cvCreateCameraCapture(0);
-	const int proposal_num = 1000;
-	const int class_num = 7405;
-	const int image_h = 480, image_w = 640;
-	const int max_size = 350, min_size = 80;
-  const int device_id = 0;
+  CvCapture* pCapture = cvCreateCameraCapture(0);
+  const int proposal_num = 1000;
+  const int class_num = 7405;
+  const int image_h = 688, image_w = 917;
+  const int max_size = 400, min_size = 80;
+  const int device_id = 1;
+  const Size input_size(image_w, image_h);
   
   // Storage
-	float boxes[proposal_num*4];
-	float conv5_windows[proposal_num*4];
-	float conv5_scales[proposal_num*4] = {};
-	float image_data[image_h*image_w*3];
-	float channel_mean[3];
-	float class_mask[class_num];
-	
-	// Initialize network
-	Caffe::set_phase(Caffe::TEST);
-	Caffe::set_mode(Caffe::GPU);
-	Caffe::SetDevice(device_id);
+  float boxes[proposal_num*4];
+  float conv5_windows[proposal_num*4];
+  float conv5_scales[proposal_num*4] = {};
+  float image_data[image_h*image_w*3];
+  float channel_mean[3];
+  float class_mask[class_num];
+  
+  // Initialize network
+  Caffe::set_phase(Caffe::TEST);
+  Caffe::set_mode(Caffe::GPU);
+  Caffe::SetDevice(device_id);
   Net<float> caffe_test_net(argv[1]);
   caffe_test_net.CopyTrainedLayersFrom(argv[2]);
   vector<string> class_name_vec(class_num);
   
   // Load data from disk
-	load_channel_mean(channel_mean, argv[3]);
-	load_class_name(class_name_vec, argv[4]);
-	load_class_mask(class_mask);
-	
+  load_channel_mean(channel_mean, argv[3]);
+  load_class_name(class_name_vec, argv[4]);
+  load_class_mask(class_mask);
+  
   // timing
   clock_t start, finish;
   clock_t start_all, finish_all;
@@ -178,6 +179,7 @@ int main(int argc, char** argv) {
     start = clock();
     start_all = start;
     Mat image(read_from_camera(pCapture), true); // copy data
+    resize(image, image, input_size);
     CHECK_EQ(image.cols, image_w) << "image size mismatch";
     CHECK_EQ(image.rows, image_h) << "image size mismatch";
     finish = clock();
