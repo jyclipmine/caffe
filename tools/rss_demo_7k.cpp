@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
   const int proposal_num = 1000;
   const int class_num = 7405;
   const int image_h = 688, image_w = 917;
-  const int max_size = 400, min_size = 80;
+  const int max_size = 900, min_size = 80;
   const int device_id = 1;
   const Size input_size(image_w, image_h);
   
