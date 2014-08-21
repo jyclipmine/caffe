@@ -18,8 +18,7 @@ using namespace cv;
 using namespace std;
 
 int runBING(Mat& image, float boxes[], float conv5_windows[], const int boxes_num,
-    const int max_size, const int min_size,
-    const int conv5_hend, const int conv5_wend);
+    const int max_size, const int min_size);
 
 // get a 640 by 480 demo
 const IplImage* read_from_camera(CvCapture* pCapture) {
@@ -138,12 +137,9 @@ int main(int argc, char** argv) {
 	CvCapture* pCapture = cvCreateCameraCapture(0);
 	const int proposal_num = 1000;
 	const int class_num = 7405;
-	const int conv5_hend = 28, conv5_wend = 38;
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
-  // const char* class_name_file = "classes.txt";
   const int device_id = 0;
-  
   
   // Storage
 	float boxes[proposal_num*4];
@@ -168,12 +164,13 @@ int main(int argc, char** argv) {
 	
   // timing
   clock_t start, finish;
-  
+  clock_t start_all, finish_all;
   // run loop
   while (true) {
     LOG(INFO) << "-------------------------------------------";
     // get image
     start = clock();
+    start_all = start;
     Mat image(read_from_camera(pCapture), true); // copy data
     CHECK_EQ(image.cols, image_w) << "image size mismatch";
     CHECK_EQ(image.rows, image_h) << "image size mismatch";
@@ -181,8 +178,7 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Load image from camera: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    runBING(image, boxes, conv5_windows, proposal_num,
-        max_size, min_size, conv5_hend, conv5_wend);
+    runBING(image, boxes, conv5_windows, proposal_num, max_size, min_size);
     finish = clock();
     LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
@@ -202,7 +198,10 @@ int main(int argc, char** argv) {
     draw_results(image, result_vecs, boxes, proposal_num, class_name_vec);
     imshow("detection results", image);
     finish = clock();
+    finish_all = finish;
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "\tTotal Time: " << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "\tFrame Rate: " << CLOCKS_PER_SEC / (finish_all - start_all) << " fps";
   }
   return 0;
 }

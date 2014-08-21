@@ -9,8 +9,7 @@ inline int bing_round(float r) {
 }
 
 int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
-    const int max_size, const int min_size,
-    const int conv5_hend, const int conv5_wend) {
+    const int max_size, const int min_size) {
 	int base = 2, W = 8, NSS = 2, numPerSz = 250;
 	static DataSetVOC dataset;
 	static Objectness objNess(dataset, base, W, NSS);
@@ -32,10 +31,10 @@ int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
 	    boxes[4*count+1] = float(x1 - 1);
 	    boxes[4*count+2] = float(y2 - 1);
 	    boxes[4*count+3] = float(x2 - 1);
-      conv5_windows[4*count  ] = float(max(bing_round((y1-17)/16), 0));
-      conv5_windows[4*count+1] = float(max(bing_round((x1-17)/16), 0));
-      conv5_windows[4*count+2] = float(min(bing_round((y2-17)/16)+1, conv5_hend));
-      conv5_windows[4*count+3] = float(min(bing_round((x2-17)/16)+1, conv5_wend));
+      conv5_windows[4*count  ] = bing_round(y1/16);
+      conv5_windows[4*count+1] = bing_round(x1/16);
+      conv5_windows[4*count+2] = bing_round(y2/16);
+      conv5_windows[4*count+3] = bing_round(x2/16);
 	    count++;
 	  }
 	}
