@@ -34,68 +34,89 @@ void SPPDetectorLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       << "number of region proposals in conv5_windows "
       << "doesn't match with that in conv5_scales";
   scale_num_ = bottom[0]->num();
-  conv5_dim_ = bottom[0]->channels() * bottom[0]->height() * bottom[0]->width();
   proposal_num_ = bottom[1]->height();
   LOG(INFO) << "There are " << scale_num_ << " scales and " << proposal_num_
       << " window proposals (in each batch)";
-  // Set up inner layers
-  // There is one SPP layer for each scale
-  LayerParameter layer_param;
-  SpatialPyramidPoolingParameter* spatial_pyramid_pooling_param
-      = layer_param.mutable_spatial_pyramid_pooling_param();
-  *spatial_pyramid_pooling_param =
-      this->layer_param_.spatial_pyramid_pooling_param();
-  for (int scale = 0; scale < scale_num_; scale++) {
-    vector<Blob<Dtype>*> spp_bottom(1, new Blob<Dtype>());
-    vector<Blob<Dtype>*> spp_top(1, new Blob<Dtype>());
-    // There is one SPP layer for each scale
-    spp_bottom[0]->Reshape(1, bottom[0]->channels(), bottom[0]->height(),
-        bottom[0]->width());
-    shared_ptr<SpatialPyramidPoolingLayer<Dtype> > spp_layer(
-        new SpatialPyramidPoolingLayer<Dtype>(layer_param));
-    spp_layer->SetUp(spp_bottom, &spp_top);
-    spp_bottom_vecs_.push_back(spp_bottom);
-    spp_top_vecs_.push_back(spp_top);
-    spp_layers_.push_back(spp_layer);
+  level_num_ =
+      this->layer_param_.spatial_pyramid_pooling_param().spatial_bin_size();
+  CHECK_GT(level_num_, 0)
+      << "the number of spatial pyramid level must be positive";
+  CHECK_EQ(this->layer_param_.pooling_param().pool(),
+      SpatialPyramidPoolingParameter_PoolMethod_MAX)
+      << "only max pooling is allowed";
+
+  // get bin numbers and calculate channel offsets
+  int channels = bottom[0]->channels();
+  int layer_offset = 0;
+  for (int level = 0; level < level_num_; level++) {
+    // for now, the bin_num_h and bin_num_w are the same
+    int bin_num_h =
+        this->layer_param_.spatial_pyramid_pooling_param().spatial_bin(level);
+    int bin_num_w =
+        this->layer_param_.spatial_pyramid_pooling_param().spatial_bin(level);
+    bin_num_h_vec_.push_back(bin_num_h);
+    bin_num_w_vec_.push_back(bin_num_w);
+    layer_offset_vec_.push_back(layer_offset);
+    layer_offset += bin_num_h * bin_num_w * channels;
   }
-  spp5_dim_ = spp_top_vecs_[0][0]->count();
-  (*top)[0]->Reshape(proposal_num_, 1, 1, spp5_dim_);
-  LOG(INFO) << "The output spp5 feature is " << spp5_dim_ << " dimensional";
+  output_dim_ = layer_offset;
+  (*top)[0]->Reshape(proposal_num_, output_dim_, 1, 1);
 }
 
 template <typename Dtype>
 void SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  const Dtype* conv_windows = bottom[1]->cpu_data();
-  const Dtype* conv_scales = bottom[2]->cpu_data();
-  int n = 0;
-  for (n = 0; n < proposal_num_; n++) {
-    int roi_start_h = conv_windows[4*n];
-    int roi_start_w = conv_windows[4*n+1];
-    int roi_end_h = conv_windows[4*n+2];
-    int roi_end_w = conv_windows[4*n+3];
-    int scale = conv_scales[n];
-    // an [0 0 0 0] box marks the end of all boxes
-    if (!roi_start_h && !roi_start_w && !roi_end_h && !roi_end_w) {
-      break;
+  const Dtype* bottom_data = bottom[0]->cpu_data();
+  const Dtype* conv5_windows = bottom[1]->cpu_data();
+  const Dtype* conv5_scales = bottom[2]->cpu_data();
+  Dtype* top_data = (*top)[0]->mutable_cpu_data();
+  const int num = (*top)[0]->num();
+  const int channels = bottom[0]->channels();
+  const int height = bottom[0]->height();
+  const int width = bottom[0]->width();
+  for (int level = 0; level < level_num_; level++) {
+    int bin_num_w = bin_num_w_vec_[level];
+    int bin_num_h = bin_num_h_vec_[level];
+    int layer_offset = layer_offset_vec_[level];
+    for (int n = 0; n < num; ++n) {
+      int roi_start_h = conv5_windows[n*4];
+      int roi_start_w = conv5_windows[n*4+1];
+      int roi_end_h   = conv5_windows[n*4+2];
+      int roi_end_w   = conv5_windows[n*4+3];
+      if (roi_start_h || roi_start_w || roi_end_h || roi_end_w) {
+        int s = conv5_scales[n];
+        float bin_size_h =
+            static_cast<float>(roi_end_h - roi_start_h) / bin_num_h;
+        float bin_size_w =
+            static_cast<float>(roi_end_w - roi_start_w) / bin_num_w;
+        for (int c = 0; c < channels; ++c) {
+          for (int ph = 0; ph < bin_num_h; ++ph) {
+            for (int pw = 0; pw < bin_num_w; ++pw) {
+              int hstart = roi_start_h + std::max<int>(floor(ph * bin_size_h),
+                  0);
+              int wstart = roi_start_w + std::max<int>(floor(pw * bin_size_w),
+                  0);
+              int hend = std::min<int>(roi_start_h
+                  + ceil((ph + 1) * bin_size_h), roi_end_h);
+              int wend = std::min<int>(roi_start_w
+                  + ceil((pw + 1) * bin_size_w), roi_end_w);
+              int top_index = ((c * bin_num_h + ph) * bin_num_w + pw)
+                  + layer_offset + n * output_dim_;
+              for (int h = hstart; h < hend; ++h) {
+                for (int w = wstart; w < wend; ++w) {
+                  int bottom_index =
+                      (((s * channels + c) * height + h) * width + w);
+                  if (bottom_data[bottom_index] > top_data[top_index]) {
+                    top_data[top_index] = bottom_data[bottom_index];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    CHECK_GE(scale, 0) << "Invalid scale: " << scale << " of window " << n;
-    CHECK_LT(scale, scale_num_) << "Invalid scale: " << scale << " of window "
-        << n;
-    // Copy data into SPP net
-    caffe_copy(conv5_dim_, bottom[0]->cpu_data() + conv5_dim_ * scale,
-        spp_bottom_vecs_[scale][0]->mutable_cpu_data());
-    // Set ROI. No checks here.
-    // SpatialPyramidPoolingLayer<Dtype>::setROI will check range.
-    spp_layers_[scale]->setROI(roi_start_h, roi_start_w, roi_end_h, roi_end_w);
-    // Forward
-    spp_layers_[scale]->Forward(spp_bottom_vecs_[scale],
-        &(spp_top_vecs_[scale]));
-    // Copy data out of SPP net
-    caffe_copy(spp5_dim_, spp_top_vecs_[scale][0]->cpu_data(),
-        (*top)[0]->mutable_cpu_data() + spp5_dim_ * n);
   }
-  LOG(INFO) << "Forwarding " << n << " boxes in this batch";
 }
 
 INSTANTIATE_CLASS(SPPDetectorLayer);
