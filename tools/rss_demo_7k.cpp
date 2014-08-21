@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     boxes2conv5(boxes, max_proposal_num, proposal_num, conv5_windows,
         conv5_scales);
     finish = clock();
-    LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC
+    LOG(INFO) << "Run BING: " << (1000 * (finish - start) / CLOCKS_PER_SEC)
         << " ms, got " << count << " boxes";
     
     start = clock();
