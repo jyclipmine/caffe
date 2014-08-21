@@ -36,6 +36,7 @@ void boxes2conv5(const float boxes[], const int max_proposal_num,
     const int proposal_num, float conv5_windows[], float conv5_scales[]) {
   const int conv5_stride = 16;
   // calculate the corresponing windows on conv5 feature map
+  // zero out the boxes
   memset(conv5_windows, 0, max_proposal_num * 4 * sizeof(float));
   for (int i = 0; i < proposal_num; i++) {
     float y1 = boxes[4*i];
