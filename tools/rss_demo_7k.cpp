@@ -187,10 +187,10 @@ int main(int argc, char** argv) {
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    runBING(image, boxes, conv5_windows, proposal_num, max_size, min_size);
+    int count = runBING(image, boxes, conv5_windows, proposal_num, max_size, min_size);
     finish = clock();
     LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC
-        << " ms";
+        << " ms, " << " got " << count << " boxes";
     
     start = clock();
     Mat2float(image_data, image, channel_mean);
