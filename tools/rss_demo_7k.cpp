@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
         conv5_scales);
     finish = clock();
     LOG(INFO) << "Run BING: " << (1000 * (finish - start) / CLOCKS_PER_SEC)
-        << " ms, got " << count << " boxes";
+        << " ms, got " << proposal_num << " boxes";
     
     start = clock();
     Mat2float(image_data, img, channel_mean);
