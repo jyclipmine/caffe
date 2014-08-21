@@ -39,15 +39,15 @@ int runBING(Mat& img, float boxes[], float conv5_windows[], const int boxes_num,
 	  }
 	}
 	// append [0, 0, 0, 0] as ending mark
-	if (count < boxes_num) {
-	  boxes[4*count  ] = 0;
-    boxes[4*count+1] = 0;
-    boxes[4*count+2] = 0;
-    boxes[4*count+3] = 0;
-    conv5_windows[4*count  ] = 0;
-    conv5_windows[4*count+1] = 0;
-    conv5_windows[4*count+2] = 0;
-    conv5_windows[4*count+3] = 0;
+	for (int i = count; i < boxes_num; i++) {
+	  boxes[4*i  ] = 0;
+    boxes[4*i+1] = 0;
+    boxes[4*i+2] = 0;
+    boxes[4*i+3] = 0;
+    conv5_windows[4*i  ] = 0;
+    conv5_windows[4*i+1] = 0;
+    conv5_windows[4*i+2] = 0;
+    conv5_windows[4*i+3] = 0;
 	}
 	return count;
 }
