@@ -77,17 +77,18 @@ const float* forward_network(Net<float>& net, float image_data[],
   vector<Blob<float>*>& input_blobs = net.input_blobs();
   CHECK_EQ(input_blobs[0]->count(), image.rows*image.cols*3) << "input image_data mismatch";
   CHECK_EQ(input_blobs[1]->count(), proposal_num*4) << "input conv5_windows mismatch";
-  CHECK_EQ(input_blobs[2]->count(), proposal_num*4) << "input boxes mismatch";
-  CHECK_EQ(input_blobs[3]->count(), class_num) << "input class_mask mismatch";
+  CHECK_EQ(input_blobs[2]->count(), proposal_num) << "input conv5_scales mismatch";
+  CHECK_EQ(input_blobs[3]->count(), proposal_num*4) << "input boxes mismatch";
+  CHECK_EQ(input_blobs[4]->count(), class_num) << "input class_mask mismatch";
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
       sizeof(float) * input_blobs[0]->count());
   memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
       sizeof(float) * input_blobs[1]->count());
-  memcpy(input_blobs[1]->mutable_cpu_data(), conv5_scales,
+  memcpy(input_blobs[2]->mutable_cpu_data(), conv5_scales,
       sizeof(float) * input_blobs[2]->count());
-  memcpy(input_blobs[2]->mutable_cpu_data(), boxes,
+  memcpy(input_blobs[3]->mutable_cpu_data(), boxes,
       sizeof(float) * input_blobs[3]->count());
-  memcpy(input_blobs[3]->mutable_cpu_data(), class_mask,
+  memcpy(input_blobs[4]->mutable_cpu_data(), class_mask,
       sizeof(float) * input_blobs[4]->count());
   
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
@@ -137,7 +138,7 @@ int main(int argc, char** argv) {
 	CvCapture* pCapture = cvCreateCameraCapture(0);
 	const int proposal_num = 1000;
 	const int class_num = 7405;
-	const int conv5_hend = 29, conv5_wend = 39;
+	const int conv5_hend = 28, conv5_wend = 38;
 	const int image_h = 480, image_w = 640;
 	const int max_size = 350, min_size = 80;
   // const char* class_name_file = "classes.txt";

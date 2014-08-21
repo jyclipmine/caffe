@@ -18,9 +18,6 @@ namespace caffe {
 template <typename Dtype>
 void SPPDetectorLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top) {
-  CHECK_EQ(bottom[0]->width(), bottom[0]->height())
-      << "the width and height of (expanded) "
-      << "conv5 feature maps should be equal";
   CHECK_EQ(bottom[1]->width(), 4)
       << "conv5_windows dimension must be 1*1*n*4, "
       << "where n is the number of proposals";
