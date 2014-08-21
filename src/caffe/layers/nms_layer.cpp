@@ -86,6 +86,7 @@ void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         int x2 = window_proposals[4*box_id+3];
         // [0, 0, 0, 0] marks the end of valid boxes
         if (!y1 && !x1 && !y2 && !x2) {
+          LOG(INFO) << "running nms on " << box_id << " windows";
           break;
         }
         nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id,
