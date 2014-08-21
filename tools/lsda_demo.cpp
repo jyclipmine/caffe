@@ -222,7 +222,7 @@ const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
       << "input class_id_vec mismatch";
   CHECK_EQ(result[2]->count(), max_proposal_num)
       << "input score_vec mismatch";
-  return result[0]->cpu_data();
+  return result;
 }
 
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
