@@ -388,20 +388,19 @@ class SPPDetectorLayer : public Layer<Dtype> {
       vector<Blob<Dtype>*>* top);
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-    LOG(FATAL) << "Backward not supported for SPPDetectorLayer";
+    NOT_IMPLEMENTED;
   }
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-    LOG(FATAL) << "Backward not supported for SPPDetectorLayer";
+    NOT_IMPLEMENTED;
   }
-
   int scale_num_;
   int proposal_num_;
-  int conv5_dim_;
-  int spp5_dim_;
-  vector<shared_ptr<SpatialPyramidPoolingLayer<Dtype> > > spp_layers_;
-  vector<vector<Blob<Dtype>*> > spp_bottom_vecs_;
-  vector<vector<Blob<Dtype>*> > spp_top_vecs_;
+  int level_num_;
+  int output_dim_;
+  vector<int> bin_num_h_vec_;
+  vector<int> bin_num_w_vec_;
+  vector<int> layer_offset_vec_;
 };
 
 // Class ScoredBoxes for use in NMSLayer
@@ -453,11 +452,11 @@ class NMSLayer : public Layer<Dtype> {
   }
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-    LOG(FATAL) << "Backward not supported for NMSLayer";
+    NOT_IMPLEMENTED;
   }
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
-    LOG(FATAL) << "Backward not supported for NMSLayer";
+    NOT_IMPLEMENTED;
   }
 
   float score_th_;
