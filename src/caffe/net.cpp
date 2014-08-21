@@ -504,7 +504,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
   Dtype loss = 0;
-  clock_t start, finish
+  clock_t start, finish;
   for (int i = start; i <= end; ++i) {
     start = clock();
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], &top_vecs_[i]);
