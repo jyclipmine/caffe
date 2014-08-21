@@ -17,8 +17,8 @@ using namespace caffe;  // NOLINT(build/namespaces)
 using namespace cv;
 using namespace std;
 
-int runBING(Mat& image, float boxes[], float conv5_windows[], const int boxes_num,
-    const int max_size, const int min_size);
+int runBING(Mat& image, float boxes[], float conv5_windows[],
+    const int boxes_num, const int max_size, const int min_size);
 
 // get a 640 by 480 demo
 const IplImage* read_from_camera(CvCapture* pCapture) {
@@ -29,7 +29,8 @@ const IplImage* read_from_camera(CvCapture* pCapture) {
 
 // do mean subtraction and convert into float type
 // Mat is already in BGR channel
-void Mat2float(float image_data[], const Mat& image, const float channel_mean[]) {
+void Mat2float(float image_data[], const Mat& image,
+  const float channel_mean[]) {
   const int channels = 3;
   const int width = image.cols;
   const int height = image.rows;
@@ -49,8 +50,8 @@ void load_channel_mean(float channel_mean[], const char* filename) {
   fin.read(reinterpret_cast<char*>(channel_mean), 3*sizeof(float));
   CHECK(fin) << "error reading channel mean file";
   fin.close();
-  LOG(INFO) << "Channel mean: B = " << channel_mean[0] << ", G = " << channel_mean[1]
-      << ", R = " << channel_mean[2];
+  LOG(INFO) << "Channel mean: B = " << channel_mean[0]
+      << ", G = " << channel_mean[1] << ", R = " << channel_mean[2];
 }
 
 void load_class_name(vector<string>& class_name_vec, const char* filename) {
@@ -70,15 +71,20 @@ void load_class_mask(float class_mask[]) {
 }
 
 const float* forward_network(Net<float>& net, float image_data[],
-    float conv5_windows[], float conv5_scales[],
-    float boxes[], float class_mask[], const int class_num, const int proposal_num,
+    float conv5_windows[], float conv5_scales[], float boxes[],
+    float class_mask[], const int class_num, const int proposal_num,
     const Mat& image) {
   vector<Blob<float>*>& input_blobs = net.input_blobs();
-  CHECK_EQ(input_blobs[0]->count(), image.rows*image.cols*3) << "input image_data mismatch";
-  CHECK_EQ(input_blobs[1]->count(), proposal_num*4) << "input conv5_windows mismatch";
-  CHECK_EQ(input_blobs[2]->count(), proposal_num) << "input conv5_scales mismatch";
-  CHECK_EQ(input_blobs[3]->count(), proposal_num*4) << "input boxes mismatch";
-  CHECK_EQ(input_blobs[4]->count(), class_num) << "input class_mask mismatch";
+  CHECK_EQ(input_blobs[0]->count(), image.rows*image.cols*3)
+      << "input image_data mismatch";
+  CHECK_EQ(input_blobs[1]->count(), proposal_num*4)
+      << "input conv5_windows mismatch";
+  CHECK_EQ(input_blobs[2]->count(), proposal_num)
+      << "input conv5_scales mismatch";
+  CHECK_EQ(input_blobs[3]->count(), proposal_num*4)
+      << "input boxes mismatch";
+  CHECK_EQ(input_blobs[4]->count(), class_num)
+      << "input class_mask mismatch";
   memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
       sizeof(float) * input_blobs[0]->count());
   memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
@@ -175,33 +181,40 @@ int main(int argc, char** argv) {
     CHECK_EQ(image.cols, image_w) << "image size mismatch";
     CHECK_EQ(image.rows, image_h) << "image size mismatch";
     finish = clock();
-    LOG(INFO) << "Load image from camera: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "Load image from camera: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     runBING(image, boxes, conv5_windows, proposal_num, max_size, min_size);
     finish = clock();
-    LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "Run BING: " << 1000 * (finish - start) / CLOCKS_PER_SEC
+        << " ms";
     
     start = clock();
     Mat2float(image_data, image, channel_mean);
     finish = clock();
-    LOG(INFO) << "Preprocess image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "Preprocess image: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     const float* result_vecs = forward_network(caffe_test_net, image_data,
-        conv5_windows, conv5_scales, boxes, class_mask, class_num,
-        proposal_num, image);
+        conv5_windows, conv5_scales, boxes, class_mask, class_num, proposal_num,
+        image);
     finish = clock();
-    LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-    
+    LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
+        << " ms";
+
     start = clock();
     draw_results(image, result_vecs, boxes, proposal_num, class_name_vec);
     imshow("detection results", image);
     finish = clock();
     finish_all = finish;
-    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-    LOG(INFO) << "\tTotal Time: " << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
-    LOG(INFO) << "\tFrame Rate: " << CLOCKS_PER_SEC / (finish_all - start_all) << " fps";
+    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
+        << " ms";
+    LOG(INFO) << "\tTotal Time: "
+        << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "\tFrame Rate: "
+        << CLOCKS_PER_SEC / float(finish_all - start_all) << " fps";
   }
   return 0;
 }
