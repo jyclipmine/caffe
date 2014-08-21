@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
     start_all = start;
     Mat img(read_from_camera(pCapture), true); // copy data
     resize(img, img, input_size);
-    CHECK_EQ(img.cols, img_w) << "image size mismatch";
-    CHECK_EQ(img.rows, img_h) << "image size mismatch";
+    CHECK_EQ(img.cols, image_w) << "image size mismatch";
+    CHECK_EQ(img.rows, image_h) << "image size mismatch";
     finish = clock();
     LOG(INFO) << "Load image from camera: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
@@ -117,8 +117,8 @@ int main(int argc, char** argv) {
     
     start = clock();
     const float* result_vecs = forward_network(caffe_test_net, image_data,
-        conv5_windows, conv5_scales, boxes, class_mask, class_num, max_proposal_num,
-        img);
+        conv5_windows, conv5_scales, boxes, class_mask, class_num,
+        max_proposal_num, img);
     finish = clock();
     LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
@@ -214,7 +214,8 @@ const float* forward_network(Net<float>& net, float image_data[],
       sizeof(float) * input_blobs[4]->count());
   
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  CHECK_EQ(result[0]->count(), 3*max_proposal_num) << "input class_mask mismatch";
+  CHECK_EQ(result[0]->count(), 3 * max_proposal_num)
+      << "input class_mask mismatch";
   return result[0]->cpu_data();
 }
 
