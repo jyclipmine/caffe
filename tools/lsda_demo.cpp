@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
         input_blobs[2]->mutable_gpu_data());
     caffe_copy(input_blobs[3]->count(), boxes,
         input_blobs[3]->mutable_gpu_data());
-    caffe_copy(input_blobs[4]->count(), valid_vec, 
+    caffe_copy(input_blobs[4]->count(), valid_vec,
         input_blobs[4]->mutable_gpu_data());
     // create prefetch thread
     CHECK(!pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
@@ -175,16 +175,16 @@ int main(int argc, char** argv) {
     finish = clock();
     LOG(INFO) << "Fetch data and load data to gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-      
-    // forward network
+
     start = clock();
+    // forward network
     caffe_test_net.ForwardPrefilled();
     finish = clock();
     LOG(INFO) << "Caffe forward image: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-  
-    // retrieve data from gpu
+    
     start = clock();
+    // retrieve data from gpu
     caffe_copy(output_blobs[0]->count(), output_blobs[0]->gpu_data(),
         result_vecs);
     finish = clock();
@@ -192,8 +192,8 @@ int main(int argc, char** argv) {
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     start = clock();
     
-    // draw results
     start = clock();
+    // draw results
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes,
         max_proposal_num, class_name_vec);
     imshow("detection results", img_show);
@@ -201,6 +201,7 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
     
+    // Estimate FPS
     finish_all = clock();
     LOG(INFO) << "Total Time: "
         << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
