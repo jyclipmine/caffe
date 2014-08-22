@@ -156,7 +156,7 @@ void NMSLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* class_id_vec = (*top)[1]->mutable_gpu_data();
   Dtype* score_vec = (*top)[2]->mutable_gpu_data();
   // reset keep_vec_per_class to be all true
-  caffe_gpu_set(proposal_num_ * class_num_, true, keep_vec_per_class);
+  caffe_gpu_set(proposal_num_ * class_num_, Dtype(true), keep_vec_per_class);
   // NOLINT_NEXT_LINE(whitespace/operators)
   kernel_within_class_nms<<<CAFFE_GET_BLOCKS(proposal_num_ * class_num_),
       CAFFE_CUDA_NUM_THREADS>>>(bottom_data, boxes, valid_vec, proposal_num_,
