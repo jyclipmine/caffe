@@ -67,20 +67,17 @@ void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   memset(result_vecs, 0, proposal_num_*sizeof(Dtype));
   const Dtype* score_mat = bottom[0]->cpu_data();
   const Dtype* window_proposals = bottom[1]->cpu_data();
+  const Dtype* valid_vec = bottom[2]->cpu_data();
   // Within-class NMS
   for (int class_id = 0; class_id < class_num_; class_id++) {
     // Do NMS for this class
     for (int box_id = 0; box_id < proposal_num_; box_id++) {
       float score = score_mat[class_num_ * box_id + class_id];
-      if (score > score_th_) {
+      if (valid_vec[box_id] && score > score_th_) {
         int y1 = window_proposals[4*box_id];
         int x1 = window_proposals[4*box_id+1];
         int y2 = window_proposals[4*box_id+2];
         int x2 = window_proposals[4*box_id+3];
-        // [0, 0, 0, 0] marks the end of valid boxes
-        if (!y1 && !x1 && !y2 && !x2) {
-          break;
-        }
         nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id, box_id));
         runNMS(nms_list_1_, nms_th_1_);
       }

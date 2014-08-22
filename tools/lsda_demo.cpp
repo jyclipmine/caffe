@@ -166,9 +166,9 @@ int main(int argc, char** argv) {
     caffe_copy(input_blobs[2]->count(), conv5_scales,
         input_blobs[2]->mutable_gpu_data());
     caffe_copy(input_blobs[3]->count(), boxes,
-        input_blobs[3]->mutable_gpu_data());
+        input_blobs[3]->mutable_cpu_data());
     caffe_copy(input_blobs[4]->count(), valid_vec,
-        input_blobs[4]->mutable_gpu_data());
+        input_blobs[4]->mutable_cpu_data());
     // create prefetch thread
     CHECK(!pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
         << "Failed to create prefetch thread";
@@ -309,8 +309,9 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       IplImage iplimage = img;
       cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
           (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
-      LOG(INFO) << "(x1,y1,x2,y2) = (" << x1 << "," << y1 << "," << x2 << ","
-          << y2 << "), No. " << (class_id + 1) << ": " << label;
+      LOG(INFO) << "box id " << box_id << ", (x1,y1,x2,y2) = (" << x1 << ","
+          << y1 << "," << x2 << "," << y2 << "), No. " << (class_id + 1) << ": "
+          << label;
       obj_num++;
     }
   }
