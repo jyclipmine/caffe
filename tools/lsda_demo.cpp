@@ -27,10 +27,10 @@ void load_class_name(vector<string>& class_name_vec, const char* filename);
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
     vector<string>& class_name_vec);
-const float* forward_network(Net<float>& net, float image_data[],
-    float conv5_windows[], float conv5_scales[], float boxes[],
-    float valid_vec[], const int class_num, const int max_proposal_num,
-    const Mat& img);
+void forward_network(float result_vecs[], Net<float>& net,
+    const float image_data[], const float conv5_windows[],
+    const float conv5_scales[], const float boxes[], const float valid_vec[],
+    const int class_num, const int max_proposal_num, const Mat& img);
 
 void boxes2conv5(const float boxes[], const int max_proposal_num,
     const int proposal_num, float conv5_windows[], float conv5_scales[],
@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
   float image_data[image_h*image_w*3];
   float valid_vec[max_proposal_num];
   float channel_mean[3];
+  float result_vecs[max_proposal_num*3];
   
   // Initialize network
   Caffe::set_phase(Caffe::TEST);
@@ -119,9 +120,8 @@ int main(int argc, char** argv) {
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    const float* result_vecs = forward_network(caffe_test_net,
-        image_data, conv5_windows, conv5_scales, boxes, valid_vec, class_num,
-        max_proposal_num, img);
+    forward_network(result_vecs, caffe_test_net, image_data, conv5_windows,
+        conv5_scales, boxes, valid_vec, class_num, max_proposal_num, img);
     const float* keep_vec = result_vecs;
     const float* class_id_vec = result_vecs + max_proposal_num;
     const float* score_vec = result_vecs + max_proposal_num * 2;
@@ -191,10 +191,10 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   fin.close();
 }
 
-const float* forward_network(Net<float>& net, float image_data[],
-    float conv5_windows[], float conv5_scales[], float boxes[],
-    float valid_vec[], const int class_num, const int max_proposal_num,
-    const Mat& img) {
+void forward_network(float result_vecs[], Net<float>& net,
+    const float image_data[], const float conv5_windows[],
+    const float conv5_scales[], const float boxes[], const float valid_vec[],
+    const int class_num, const int max_proposal_num, const Mat& img) {
   clock_t start, finish;
   start = clock();
   vector<Blob<float>*>& input_blobs = net.input_blobs();
@@ -229,13 +229,11 @@ const float* forward_network(Net<float>& net, float image_data[],
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
   
   start = clock();
-  // CHECK_EQ(result[0]->count(), max_proposal_num*3);
-  const float* result_vecs = result[0]->cpu_data();
+  CHECK_EQ(result[0]->count(), max_proposal_num*3);
+  caffe_copy(result[0]->count(), result[0]->gpu_data(), result_vecs);
   finish = clock();
   LOG(INFO) << "\tcaffe retrieve data: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-        
-  return result_vecs;
 }
 
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
