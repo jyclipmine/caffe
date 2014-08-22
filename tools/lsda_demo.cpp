@@ -185,18 +185,18 @@ int main(int argc, char** argv) {
     
     start = clock();
     // retrieve data from gpu
-    caffe_copy(output_blobs[0]->count(), output_blobs[0]->gpu_data(),
+    caffe_copy(output_blobs[0]->count(), output_blobs[0]->cpu_data(),
         result_vecs);
     finish = clock();
     LOG(INFO) << "Caffe retrieve data from gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-    start = clock();
     
     start = clock();
     // draw results
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes,
         max_proposal_num, class_name_vec);
     imshow("detection results", img_show);
+    waitKey(30);
     finish = clock();
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
