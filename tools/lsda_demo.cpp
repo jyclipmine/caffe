@@ -27,7 +27,7 @@ void load_class_name(vector<string>& class_name_vec, const char* filename);
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
     vector<string>& class_name_vec);
-const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
+const float* forward_network(Net<float>& net, float image_data[],
     float conv5_windows[], float conv5_scales[], float boxes[],
     float valid_vec[], const int class_num, const int max_proposal_num,
     const Mat& img);
@@ -119,12 +119,12 @@ int main(int argc, char** argv) {
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
-    const vector<Blob<float>*>& result = forward_network(caffe_test_net,
+    const float* result_vecs = forward_network(caffe_test_net,
         image_data, conv5_windows, conv5_scales, boxes, valid_vec, class_num,
         max_proposal_num, img);
-    const float* keep_vec = result[0]->cpu_data();
-    const float* class_id_vec = result[0]->cpu_data() + max_proposal_num;
-    const float* score_vec = result[0]->cpu_data() + max_proposal_num * 2;
+    const float* keep_vec = result_vecs;
+    const float* class_id_vec = result_vecs + max_proposal_num;
+    const float* score_vec = result_vecs + max_proposal_num * 2;
     finish = clock();
     LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
@@ -191,10 +191,12 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   fin.close();
 }
 
-const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
+const float* forward_network(Net<float>& net, float image_data[],
     float conv5_windows[], float conv5_scales[], float boxes[],
     float valid_vec[], const int class_num, const int max_proposal_num,
     const Mat& img) {
+  clock_t start, finish;
+  start = clock();
   vector<Blob<float>*>& input_blobs = net.input_blobs();
   CHECK_EQ(input_blobs[0]->count(), img.rows*img.cols*3)
       << "input image_data mismatch";
@@ -206,21 +208,34 @@ const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
       << "input boxes mismatch";
   CHECK_EQ(input_blobs[4]->count(), max_proposal_num)
       << "input valid_vec mismatch";
-  memcpy(input_blobs[0]->mutable_cpu_data(), image_data,
-      sizeof(float) * input_blobs[0]->count());
-  memcpy(input_blobs[1]->mutable_cpu_data(), conv5_windows,
-      sizeof(float) * input_blobs[1]->count());
-  memcpy(input_blobs[2]->mutable_cpu_data(), conv5_scales,
-      sizeof(float) * input_blobs[2]->count());
-  memcpy(input_blobs[3]->mutable_cpu_data(), boxes,
-      sizeof(float) * input_blobs[3]->count());
-  memcpy(input_blobs[4]->mutable_cpu_data(), valid_vec,
-      sizeof(float) * input_blobs[4]->count());
+  caffe_copy(input_blobs[0]->count(), image_data,
+      input_blobs[0]->mutable_gpu_data());
+  caffe_copy(input_blobs[1]->count(), conv5_windows,
+      input_blobs[1]->mutable_gpu_data());
+  caffe_copy(input_blobs[2]->count(), conv5_scales,
+      input_blobs[2]->mutable_gpu_data());
+  caffe_copy(input_blobs[3]->count(), boxes,
+      input_blobs[3]->mutable_gpu_data());
+  caffe_copy(input_blobs[4]->count(), valid_vec, 
+      input_blobs[4]->mutable_gpu_data());
+  finish = clock();
+  LOG(INFO) << "\tcaffe load data: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
   
+  start = clock();
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  CHECK_EQ(result[0]->count(), max_proposal_num * 3)
-      << "input keep_vec mismatch";
-  return result;
+  finish = clock();
+  LOG(INFO) << "\tcaffe forward image: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+  
+  start = clock();
+  // CHECK_EQ(result[0]->count(), max_proposal_num*3);
+  const float* result_vecs = result[0]->cpu_data();
+  finish = clock();
+  LOG(INFO) << "\tcaffe retrieve data: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+        
+  return result_vecs;
 }
 
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 

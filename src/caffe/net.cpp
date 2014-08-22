@@ -504,15 +504,11 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
   CHECK_LT(end, layers_.size());
   Dtype loss = 0;
-  clock_t start_time, finish_time;
   for (int i = start; i <= end; ++i) {
-    start_time = clock();
+    // LOG(ERROR) << "Forwarding " << layer_names_[i];
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], &top_vecs_[i]);
     loss += layer_loss;
     if (debug_info_) { ForwardDebugInfo(i); }
-    finish_time = clock();
-    LOG(INFO) << "Forwarding " << layer_names_[i] << ": "
-        << 1000 * (finish_time - start_time) / CLOCKS_PER_SEC << " ms";
   }
   return loss;
 }
