@@ -185,7 +185,7 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   CHECK(fin) << "cannot open class name file";
   for (int i = 0; i < class_name_vec.size(); i++) {
     getline(fin, class_name_vec[i]);
-    LOG(INFO) << "loading class: " << class_name_vec[i];
+    LOG(INFO) << "loading class No. " << (i + 1) << ": " << class_name_vec[i];
   }
   CHECK(fin) << "error loading class name file";
   fin.close();
