@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   // Parameters
   CvCapture* pCapture = cvCreateCameraCapture(0);
   const int max_proposal_num = 1000;
-  const int class_num = 7405;
+  const int class_num = 7604;
   const int image_h = 688, image_w = 917;
   const int device_id = atoi(argv[5]);
   const Size input_size(image_w, image_h);
