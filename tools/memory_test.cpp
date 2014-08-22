@@ -22,13 +22,13 @@ int main(int argc, char** argv) {
   while (true) {
     LOG(INFO) << "-------------------------------------------";
     start = clock();
-    blob.cpu_data();
+    blob.mutable_cpu_data();
     finish = clock();
     LOG(INFO) << "GPU to CPU: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
     
     start = clock();
-    blob.gpu_data();
+    blob.mutable_gpu_data();
     finish = clock();
     LOG(INFO) << "CPU to GPU: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
