@@ -123,8 +123,8 @@ int main(int argc, char** argv) {
         image_data, conv5_windows, conv5_scales, boxes, valid_vec, class_num,
         max_proposal_num, img);
     const float* keep_vec = result[0]->cpu_data();
-    const float* class_id_vec = result[1]->cpu_data();
-    const float* score_vec = result[2]->cpu_data();
+    const float* class_id_vec = result[0]->cpu_data() + max_proposal_num;
+    const float* score_vec = result[0]->cpu_data() + max_proposal_num * 2;
     finish = clock();
     LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
@@ -216,12 +216,8 @@ const vector<Blob<float>*>& forward_network(Net<float>& net, float image_data[],
       sizeof(float) * input_blobs[4]->count());
   
   const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  CHECK_EQ(result[0]->count(), max_proposal_num)
+  CHECK_EQ(result[0]->count(), max_proposal_num * 3)
       << "input keep_vec mismatch";
-  CHECK_EQ(result[1]->count(), max_proposal_num)
-      << "input class_id_vec mismatch";
-  CHECK_EQ(result[2]->count(), max_proposal_num)
-      << "input score_vec mismatch";
   return result;
 }
 
