@@ -17,6 +17,7 @@ using namespace caffe; // NOLINT(build/namespaces)
 using namespace cv;
 using namespace std;
 
+// function declarations
 int bing_boxes(const Mat& img, float boxes[], const int max_proposal_num);
 void boxes2conv5(const float boxes[], const int max_proposal_num,
     const int proposal_num, float conv5_windows[], float conv5_scales[]);
@@ -27,10 +28,185 @@ void load_class_name(vector<string>& class_name_vec, const char* filename);
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
     vector<string>& class_name_vec);
-void forward_network(float result_vecs[], Net<float>& net,
-    const float image_data[], const float conv5_windows[],
-    const float conv5_scales[], const float boxes[], const float valid_vec[],
-    const int class_num, const int max_proposal_num, const Mat& img);
+    
+struct PrefetchParameterSet {
+  CvCapture* pCapture;
+  int max_proposal_num;
+  int class_num;
+  Size input_size;
+  float* image_data;
+  float* conv5_windows;
+  float* conv5_scales;
+  float* boxes;
+  float* valid_vec;
+  float* channel_mean;
+} prefetch_param;
+
+void prefetchThread(void* ptr) {
+  PrefetchParameterSet* prefetch_param_ptr =
+      reinterpret_cast<PrefetchParameterSet*>(ptr);
+  
+  // Unpack prefetch_param
+  CvCapture* pCapture = prefetch_param.pCapture;
+  int max_proposal_num = prefetch_param.max_proposal_num;
+  int class_num = prefetch_param.class_num;
+  Size input_size = prefetch_param.input_size;
+  float* image_data = prefetch_param.image_dataa;
+  float* conv5_windows = prefetch_param.conv5_windows;
+  float* conv5_scales = prefetch_param.conv5_scales;
+  float* boxes = prefetch_param.boxes;
+  float* valid_vec = prefetch_param.valid_vec;
+  float* channel_mean = prefetch_param.channel_mean;
+  
+  // load image from camera
+  Mat img(read_from_camera(pCapture), true); // copy data
+  resize(img, img, input_size);
+  Mat2float(image_data, img, channel_mean);
+  
+  // run BING
+  int proposal_num = bing_boxes(img, boxes, max_proposal_num);
+  boxes2conv5(boxes, max_proposal_num, proposal_num, conv5_windows,
+      conv5_scales, valid_vec);
+}
+
+int main(int argc, char** argv) {
+  CHECK_EQ(argc, 6) << "Input argument number mismatch";
+  
+  // Parameters
+  CvCapture* pCapture = cvCreateCameraCapture(0);
+  const int max_proposal_num = 1000;
+  const int class_num = 7604;
+  const int device_id = atoi(argv[5]);
+  const Size input_size(image_w, image_h);
+  
+  // Storage
+  float image_data[image_h*image_w*3];
+  float boxes[max_proposal_num*4];
+  float conv5_windows[max_proposal_num*4];
+  float conv5_scales[max_proposal_num];
+  float valid_vec[max_proposal_num];
+  float channel_mean[3];
+  float result_vecs[max_proposal_num*3];
+  const float* keep_vec = result_vecs;
+  const float* class_id_vec = result_vecs + max_proposal_num;
+  const float* score_vec = result_vecs + max_proposal_num * 2;
+  
+  // Set prefetch_param
+  prefetch_param.pCapture = pCapture;
+  prefetch_param.max_proposal_num = max_proposal_num;
+  prefetch_param.class_num = class_num;
+  prefetch_param.input_size = input_size;
+  prefetch_param.image_data = image_data;
+  prefetch_param.conv5_windows = conv5_windows;
+  prefetch_param.conv5_scales = conv5_scales;
+  prefetch_param.boxes = boxes;
+  prefetch_param.valid_vec = valid_vec;
+  prefetch_param.channel_mean = channel_mean;
+  
+  // thread for fetching data
+  pthread_t fetch_thread;
+  // create prefetch thread
+  CHECK(pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
+      << "Failed to create prefetch thread";
+  
+  // Initialize network
+  Caffe::set_phase(Caffe::TEST);
+  Caffe::set_mode(Caffe::GPU);
+  Caffe::SetDevice(device_id);
+  Net<float> caffe_test_net(argv[1]);
+  caffe_test_net.CopyTrainedLayersFrom(argv[2]);
+  vector<string> class_name_vec(class_num);
+  vector<Blob<float>*>& input_blobs = net.input_blobs();
+  vector<Blob<float>*>& output_blobs = net.output_blobs();
+  CHECK_EQ(input_blobs[0]->count(), img.rows*img.cols*3)
+      << "input image_data mismatch";
+  CHECK_EQ(input_blobs[1]->count(), max_proposal_num*4)
+      << "input conv5_windows mismatch";
+  CHECK_EQ(input_blobs[2]->count(), max_proposal_num)
+      << "input conv5_scales mismatch";
+  CHECK_EQ(input_blobs[3]->count(), max_proposal_num*4)
+      << "input boxes mismatch";
+  CHECK_EQ(input_blobs[4]->count(), max_proposal_num)
+      << "input valid_vec mismatch";
+  CHECK_EQ(output_blobs[0]->count(), max_proposal_num*3)
+      << "output size mismatch";
+  
+  // load data from disk
+  load_channel_mean(channel_mean, argv[3]);
+  load_class_name(class_name_vec, argv[4]);
+  
+  // timing
+  clock_t start, finish;
+  clock_t start_all, finish_all;
+  // run loop
+  while (true) {
+    LOG(INFO) << "-------------------------------------------";   
+    // join prefetch thread
+    CHECK(pthread_join(fetch_thread, NULL))
+        << "Failed to join prefetch thread";
+    
+    // load data to gpu
+    start = clock();
+    caffe_copy(input_blobs[0]->count(), image_data,
+        input_blobs[0]->mutable_gpu_data());
+    caffe_copy(input_blobs[1]->count(), conv5_windows,
+        input_blobs[1]->mutable_gpu_data());
+    caffe_copy(input_blobs[2]->count(), conv5_scales,
+        input_blobs[2]->mutable_gpu_data());
+    caffe_copy(input_blobs[3]->count(), boxes,
+        input_blobs[3]->mutable_gpu_data());
+    caffe_copy(input_blobs[4]->count(), valid_vec, 
+        input_blobs[4]->mutable_gpu_data());
+    finish = clock();
+    LOG(INFO) << "Caffe load data to gpu: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    
+    // create prefetch thread
+    CHECK(pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
+        << "Failed to create prefetch thread";
+      
+    // forward network
+    start = clock();
+    const vector<Blob<float>*>& result = net.ForwardPrefilled();
+    finish = clock();
+    LOG(INFO) << "Caffe forward image: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+  
+    // retrieve data from gpu
+    start = clock();
+    caffe_copy(output_blobs[0]->count(), output_blobs[0]->gpu_data(),
+        result_vecs);
+    finish = clock();
+    LOG(INFO) << "Caffe retrieve data from gpu: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
+    start = clock();
+    
+    // draw results
+    start = clock();
+    draw_results(img, keep_vec, class_id_vec, score_vec, boxes,
+        max_proposal_num, class_name_vec);
+    imshow("detection results", img);
+    finish = clock();
+    finish_all = finish;
+    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
+        << " ms";
+    LOG(INFO) << "Total Time: "
+        << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
+    LOG(INFO) << "Frame Rate: "
+        << CLOCKS_PER_SEC / float(finish_all - start_all) << " fps";
+  }
+  return 0;
+}
+
+// get a 640 by 480 demo
+const IplImage* read_from_camera(CvCapture* pCapture) {
+  IplImage* pFrame = cvQueryFrame(pCapture);
+  CHECK(pFrame)
+      << "Failed to read image from camera. Check your camera settings";
+  // wait some time so that the image is fully loaded
+  waitKey(20);
+  return pFrame;
+}
 
 void boxes2conv5(const float boxes[], const int max_proposal_num,
     const int proposal_num, float conv5_windows[], float conv5_scales[],
@@ -54,104 +230,6 @@ void boxes2conv5(const float boxes[], const int max_proposal_num,
   }
   // for now, set all scales to be zero
   memset(conv5_scales, 0, max_proposal_num * sizeof(float));
-}
-
-int main(int argc, char** argv) {
-  CHECK_EQ(argc, 6) << "Input argument number mismatch";
-  
-  // Parameters
-  CvCapture* pCapture = cvCreateCameraCapture(0);
-  const int max_proposal_num = 1000;
-  const int class_num = 7604;
-  const int image_h = 688, image_w = 917;
-  const int device_id = atoi(argv[5]);
-  const Size input_size(image_w, image_h);
-  
-  // Storage
-  float boxes[max_proposal_num*4];
-  float conv5_windows[max_proposal_num*4];
-  float conv5_scales[max_proposal_num];
-  float image_data[image_h*image_w*3];
-  float valid_vec[max_proposal_num];
-  float channel_mean[3];
-  float result_vecs[max_proposal_num*3];
-  
-  // Initialize network
-  Caffe::set_phase(Caffe::TEST);
-  Caffe::set_mode(Caffe::GPU);
-  Caffe::SetDevice(device_id);
-  Net<float> caffe_test_net(argv[1]);
-  caffe_test_net.CopyTrainedLayersFrom(argv[2]);
-  vector<string> class_name_vec(class_num);
-  
-  // Load data from disk
-  load_channel_mean(channel_mean, argv[3]);
-  load_class_name(class_name_vec, argv[4]);
-  
-  // timing
-  clock_t start, finish;
-  clock_t start_all, finish_all;
-  // run loop
-  while (true) {
-    LOG(INFO) << "-------------------------------------------";
-    // get image
-    start = clock();
-    start_all = start;
-    Mat img(read_from_camera(pCapture), true); // copy data
-    resize(img, img, input_size);
-    CHECK_EQ(img.cols, image_w) << "image size mismatch";
-    CHECK_EQ(img.rows, image_h) << "image size mismatch";
-    finish = clock();
-    LOG(INFO) << "Load image from camera: "
-        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-    
-    start = clock();
-    int proposal_num = bing_boxes(img, boxes, max_proposal_num);
-    boxes2conv5(boxes, max_proposal_num, proposal_num, conv5_windows,
-        conv5_scales, valid_vec);
-    finish = clock();
-    LOG(INFO) << "Run BING: " << (1000 * (finish - start) / CLOCKS_PER_SEC)
-        << " ms, got " << proposal_num << " boxes";
-    
-    start = clock();
-    Mat2float(image_data, img, channel_mean);
-    finish = clock();
-    LOG(INFO) << "Preprocess image: "
-        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-    
-    start = clock();
-    forward_network(result_vecs, caffe_test_net, image_data, conv5_windows,
-        conv5_scales, boxes, valid_vec, class_num, max_proposal_num, img);
-    const float* keep_vec = result_vecs;
-    const float* class_id_vec = result_vecs + max_proposal_num;
-    const float* score_vec = result_vecs + max_proposal_num * 2;
-    finish = clock();
-    LOG(INFO) << "Forward image: " << 1000 * (finish - start) / CLOCKS_PER_SEC
-        << " ms";
-
-    start = clock();
-    draw_results(img, keep_vec, class_id_vec, score_vec, boxes,
-        max_proposal_num, class_name_vec);
-    imshow("detection results", img);
-    finish = clock();
-    finish_all = finish;
-    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
-        << " ms";
-    LOG(INFO) << "Total Time: "
-        << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
-    LOG(INFO) << "Frame Rate: "
-        << CLOCKS_PER_SEC / float(finish_all - start_all) << " fps";
-  }
-  return 0;
-}
-
-// get a 640 by 480 demo
-const IplImage* read_from_camera(CvCapture* pCapture) {
-  IplImage* pFrame = cvQueryFrame(pCapture);
-  CHECK(pFrame)
-      << "Failed to read image from camera. Check your camera settings";
-  waitKey(20);
-  return pFrame;
 }
 
 // do mean subtraction and convert into float type
@@ -191,51 +269,6 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
   fin.close();
 }
 
-void forward_network(float result_vecs[], Net<float>& net,
-    const float image_data[], const float conv5_windows[],
-    const float conv5_scales[], const float boxes[], const float valid_vec[],
-    const int class_num, const int max_proposal_num, const Mat& img) {
-  clock_t start, finish;
-  start = clock();
-  vector<Blob<float>*>& input_blobs = net.input_blobs();
-  CHECK_EQ(input_blobs[0]->count(), img.rows*img.cols*3)
-      << "input image_data mismatch";
-  CHECK_EQ(input_blobs[1]->count(), max_proposal_num*4)
-      << "input conv5_windows mismatch";
-  CHECK_EQ(input_blobs[2]->count(), max_proposal_num)
-      << "input conv5_scales mismatch";
-  CHECK_EQ(input_blobs[3]->count(), max_proposal_num*4)
-      << "input boxes mismatch";
-  CHECK_EQ(input_blobs[4]->count(), max_proposal_num)
-      << "input valid_vec mismatch";
-  caffe_copy(input_blobs[0]->count(), image_data,
-      input_blobs[0]->mutable_gpu_data());
-  caffe_copy(input_blobs[1]->count(), conv5_windows,
-      input_blobs[1]->mutable_gpu_data());
-  caffe_copy(input_blobs[2]->count(), conv5_scales,
-      input_blobs[2]->mutable_gpu_data());
-  caffe_copy(input_blobs[3]->count(), boxes,
-      input_blobs[3]->mutable_gpu_data());
-  caffe_copy(input_blobs[4]->count(), valid_vec, 
-      input_blobs[4]->mutable_gpu_data());
-  finish = clock();
-  LOG(INFO) << "\tcaffe load data: "
-        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-  
-  start = clock();
-  const vector<Blob<float>*>& result = net.ForwardPrefilled();
-  finish = clock();
-  LOG(INFO) << "\tcaffe forward image: "
-        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-  
-  start = clock();
-  CHECK_EQ(result[0]->count(), max_proposal_num*3);
-  caffe_copy(result[0]->count(), result[0]->gpu_data(), result_vecs);
-  finish = clock();
-  LOG(INFO) << "\tcaffe retrieve data: "
-        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
-}
-
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
     vector<string>& class_name_vec) {
@@ -264,7 +297,7 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
           (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
       LOG(INFO) << "(x1,y1,x2,y2) = (" << x1 << "," << y1 << "," << x2 << ","
-          << y2 << "): " << label;
+          << y2 << "), No. " << (class_id + 1) << ": " << label;
       obj_num++;
     }
   }
