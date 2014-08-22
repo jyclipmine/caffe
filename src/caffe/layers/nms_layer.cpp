@@ -90,11 +90,13 @@ void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         }
         nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id,
             box_id));
-        runNMS(&nms_list_1_, nms_th_1_);
+        
       }
     }
+    runNMS(&nms_list_1_, nms_th_1_);
     nms_list_2_.insert(nms_list_2_.end(), nms_list_1_.begin(),
         nms_list_1_.end());
+    nms_list_1_.clear();
   }
   // Between-class NMS
   runNMS(&nms_list_2_, nms_th_2_);
