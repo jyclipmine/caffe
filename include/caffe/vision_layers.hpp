@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <list>
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -402,6 +403,30 @@ class SPPDetectorLayer : public Layer<Dtype> {
   vector<int> layer_offset_vec_;
 };
 
+// Class ScoredBoxes for use in NMSLayer
+class ScoredBoxes {
+ public:
+  ScoredBoxes(int y1, int x1, int y2, int x2, float score,
+      int class_id, int box_id): y1_(y1), x1_(x1), y2_(y2), x2_(x2),
+      score_(score), class_id_(class_id), box_id_(box_id) {
+      area_ = (y2_ - y1_ + 1) * (x2_ - x1_ + 1);
+  }
+  float get_score() const { return score_; }
+  int get_class_id() const { return class_id_; }
+  int get_box_id() const { return box_id_; }
+  float IoU(const ScoredBoxes& another_box) const;
+  
+ private:
+  int y1_;
+  int x1_;
+  int y2_;
+  int x2_;
+  float score_;
+  int class_id_;
+  int box_id_;
+  int area_;
+};
+
 /* NMSLayer
 */
 template <typename Dtype>
@@ -422,7 +447,9 @@ class NMSLayer : public Layer<Dtype> {
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
+      vector<Blob<Dtype>*>* top) {
+    return Forward_cpu(bottom, top);
+  }
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
     NOT_IMPLEMENTED;
@@ -431,12 +458,15 @@ class NMSLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom) {
     NOT_IMPLEMENTED;
   }
-  Dtype score_th_;
-  Dtype within_class_nms_th_;
-  Dtype across_class_nms_th_;
+
+  float score_th_;
+  float nms_th_1_;
+  float nms_th_2_;
+  int disp_num_;
   int proposal_num_;
   int class_num_;
-  shared_ptr<Blob<Dtype> > blob_keep_vec_per_class_;
+  std::list<ScoredBoxes> nms_list_1_;
+  std::list<ScoredBoxes> nms_list_2_;
 };
 
 }  // namespace caffe
