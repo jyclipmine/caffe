@@ -239,11 +239,13 @@ void forward_network(float result_vecs[], Net<float>& net,
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
     vector<string>& class_name_vec) {
-  const static CvScalar color = cvScalar(0, 0, 255);
+  const static CvScalar blu = cvScalar(255, 0, 0);
+  const static CvScalar red = cvScalar(0, 0, 255);
   CvFont font;
   cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1, CV_AA);
   char label[200];
   int obj_num = 0;
+  const int strong_cls_num = 200;
   for (int box_id = 0; box_id < max_proposal_num; box_id++) {
     if (keep_vec[box_id]) {
       int y1 = boxes[box_id*4  ];
@@ -254,12 +256,13 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
-      line(img, ul, ur, color, 3);
-      line(img, ur, lr, color, 3);
-      line(img, lr, ll, color, 3);
-      line(img, ll, ul, color, 3);
+      line(img, ul, ur, (class_id < strong_cls_num ? blu : red), 3);
+      line(img, ur, lr, (class_id < strong_cls_num ? blu : red), 3);
+      line(img, lr, ll, (class_id < strong_cls_num ? blu : red), 3);
+      line(img, ll, ul, (class_id < strong_cls_num ? blu : red), 3);
       IplImage iplimage = img;
-      cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font, CV_RGB(255,0,0));
+      cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
+          (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
       LOG(INFO) << "(x1,y1,x2,y2) = (" << x1 << "," << y1 << "," << x2 << ","
           << y2 << "): " << label;
       obj_num++;
