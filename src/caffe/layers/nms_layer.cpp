@@ -43,9 +43,7 @@ void NMSLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
   blob_keep_vec_per_class_.reset(new Blob<Dtype>(bottom[0]->num(), 
       bottom[0]->channels(), bottom[0]->height(), bottom[0]->width())); 
   // set up output blobs
-  (*top)[0]->Reshape(proposal_num_, 1, 1, 1);
-  (*top)[1]->Reshape(proposal_num_, 1, 1, 1);
-  (*top)[2]->Reshape(proposal_num_, 1, 1, 1);
+  (*top)[0]->Reshape(3 * proposal_num_, 1, 1, 1);
 }
 
 template <typename Dtype>

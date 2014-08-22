@@ -416,7 +416,7 @@ class NMSLayer : public Layer<Dtype> {
     return LayerParameter_LayerType_NMS;
   }
   virtual inline int ExactNumBottomBlobs() const { return 3; }
-  virtual inline int ExactNumTopBlobs() const { return 3; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
