@@ -148,6 +148,8 @@ int main(int argc, char** argv) {
 // get a 640 by 480 demo
 const IplImage* read_from_camera(CvCapture* pCapture) {
   IplImage* pFrame = cvQueryFrame(pCapture);
+  CHECK(pFrame)
+      << "Failed to read image from camera. Check your camera settings";
   waitKey(20);
   return pFrame;
 }
