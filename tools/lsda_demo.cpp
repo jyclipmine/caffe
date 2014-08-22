@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     CHECK(!pthread_join(fetch_thread, NULL))
         << "Failed to join prefetch thread";
     img_fetch.copyTo(img_show);
-    memcpy(boxes_show, boxes_fetch, max_proposal_num * sizeof(float));
+    memcpy(boxes_show, boxes_fetch, 4 * max_proposal_num * sizeof(float));
     // load data to gpu
     caffe_copy(input_blobs[0]->count(), image_data,
         input_blobs[0]->mutable_gpu_data());
@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes_show,
         max_proposal_num, class_name_vec);
     imshow("detection results", img_show);
-    waitKey(30);
+    waitKey(40);
     finish = clock();
     LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
         << " ms";
