@@ -38,7 +38,7 @@ struct PrefetchParameterSet {
   float* image_data;
   float* conv5_windows;
   float* conv5_scales;
-  float* boxes;
+  float* boxes_fetch;
   float* valid_vec;
   float* channel_mean;
   Mat* img_ptr;
@@ -56,7 +56,7 @@ void* prefetchThread(void* ptr) {
   float* image_data = prefetch_param_ptr->image_data;
   float* conv5_windows = prefetch_param_ptr->conv5_windows;
   float* conv5_scales = prefetch_param_ptr->conv5_scales;
-  float* boxes = prefetch_param_ptr->boxes;
+  float* boxes_fetch = prefetch_param_ptr->boxes_fetch;
   float* valid_vec = prefetch_param_ptr->valid_vec;
   float* channel_mean = prefetch_param_ptr->channel_mean;
   Mat* img_ptr = prefetch_param_ptr->img_ptr;
@@ -68,8 +68,8 @@ void* prefetchThread(void* ptr) {
   Mat2float(image_data, *img_ptr, channel_mean);
     
   // run BING
-  int proposal_num = bing_boxes(*img_ptr, boxes, max_proposal_num);
-  boxes2conv5(boxes, max_proposal_num, proposal_num, conv5_windows,
+  int proposal_num = bing_boxes(*img_ptr, boxes_fetch, max_proposal_num);
+  boxes2conv5(boxes_fetch, max_proposal_num, proposal_num, conv5_windows,
       conv5_scales, valid_vec);
   return (void*)0;
 }
@@ -88,7 +88,8 @@ int main(int argc, char** argv) {
   
   // Storage
   float image_data[image_h*image_w*3];
-  float boxes[max_proposal_num*4];
+  float boxes_fetch[max_proposal_num*4];
+  float boxes_show[max_proposal_num*4];
   float conv5_windows[max_proposal_num*4];
   float conv5_scales[max_proposal_num];
   float valid_vec[max_proposal_num];
@@ -108,7 +109,7 @@ int main(int argc, char** argv) {
   prefetch_param.image_data = image_data;
   prefetch_param.conv5_windows = conv5_windows;
   prefetch_param.conv5_scales = conv5_scales;
-  prefetch_param.boxes = boxes;
+  prefetch_param.boxes_fetch = boxes_fetch;
   prefetch_param.valid_vec = valid_vec;
   prefetch_param.channel_mean = channel_mean;
   prefetch_param.img_ptr = &img_fetch;
@@ -158,6 +159,7 @@ int main(int argc, char** argv) {
     CHECK(!pthread_join(fetch_thread, NULL))
         << "Failed to join prefetch thread";
     img_fetch.copyTo(img_show);
+    memcpy(boxes_show, boxes_fetch, max_proposal_num * sizeof(float));
     // load data to gpu
     caffe_copy(input_blobs[0]->count(), image_data,
         input_blobs[0]->mutable_gpu_data());
@@ -165,7 +167,7 @@ int main(int argc, char** argv) {
         input_blobs[1]->mutable_gpu_data());
     caffe_copy(input_blobs[2]->count(), conv5_scales,
         input_blobs[2]->mutable_gpu_data());
-    caffe_copy(input_blobs[3]->count(), boxes,
+    caffe_copy(input_blobs[3]->count(), boxes_fetch,
         input_blobs[3]->mutable_cpu_data());
     caffe_copy(input_blobs[4]->count(), valid_vec,
         input_blobs[4]->mutable_cpu_data());
@@ -193,7 +195,7 @@ int main(int argc, char** argv) {
     
     start = clock();
     // draw results
-    draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes,
+    draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes_show,
         max_proposal_num, class_name_vec);
     imshow("detection results", img_show);
     waitKey(30);

@@ -79,10 +79,11 @@ void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         int y2 = window_proposals[4*box_id+2];
         int x2 = window_proposals[4*box_id+3];
         nms_list_1_.push_back(ScoredBoxes(y1, x1, y2, x2, score, class_id, box_id));
-        runNMS(nms_list_1_, nms_th_1_);
       }
     }
+    runNMS(nms_list_1_, nms_th_1_);
     nms_list_2_.insert(nms_list_2_.end(), nms_list_1_.begin(), nms_list_1_.end());
+    nms_list_1_.clear();
   }
   // Between-class NMS
   runNMS(nms_list_2_, nms_th_2_);
@@ -92,9 +93,15 @@ void NMSLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   for (iter = nms_list_2_.begin();
       (iter != nms_list_2_.end()) && (count < disp_num_); ++iter, ++count) {
     int box_id = int(iter->get_box_id());
+    // int y1 = window_proposals[4*box_id];
+    // int x1 = window_proposals[4*box_id+1];
+    // int y2 = window_proposals[4*box_id+2];
+    // int x2 = window_proposals[4*box_id+3];
+    // LOG(INFO) << "keeping box id " << box_id << ", (x1,y1,x2,y2) = (" << x1 
+    //      << "," << y1 << "," << x2 << "," << y2 << ")";
     result_vecs[box_id] = 1;
     result_vecs[box_id + proposal_num_] = iter->get_class_id();
-    result_vecs[box_id + 2*proposal_num_] = iter->get_score();
+    result_vecs[box_id + 2 * proposal_num_] = iter->get_score();
   }
 }
 
