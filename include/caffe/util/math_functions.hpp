@@ -95,6 +95,10 @@ template <typename Dtype>
 Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
 
 template <typename Dtype>
+Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
+    const Dtype* y, const int incy);
+
+template <typename Dtype>
 int caffe_cpu_hamming_distance(const int n, const Dtype* x, const Dtype* y);
 
 // Returns the sum of the absolute values of the elements of vector x
@@ -133,11 +137,10 @@ inline char caffe_sign(Dtype val) {
 DEFINE_CAFFE_CPU_UNARY_FUNC(sign, y[i] = caffe_sign<Dtype>(x[i]));
 
 // This returns a nonzero value if the input has its sign bit set.
-// The name sngbit is meant to avoid conflicts with std::signbit in the macro
-bool caffe_signbit(float arg);
-bool caffe_signbit(double arg);
-bool caffe_signbit(long double arg);
-DEFINE_CAFFE_CPU_UNARY_FUNC(sgnbit, y[i] = caffe_signbit(x[i]));
+// The name sngbit is meant to avoid conflicts with std::signbit in the macro.
+// The extra parens are needed because CUDA < 6.5 defines signbit as a macro,
+// and we don't want that to expand here when CUDA headers are also included.
+DEFINE_CAFFE_CPU_UNARY_FUNC(sgnbit, y[i] = (std::signbit)(x[i]));
 
 DEFINE_CAFFE_CPU_UNARY_FUNC(fabs, y[i] = std::fabs(x[i]));
 

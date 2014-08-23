@@ -135,7 +135,8 @@ In other `ENV` settings, things may not work as expected.
 Simply run the following:
 
     brew install --build-from-source --with-python boost
-    for x in snappy leveldb protobuf gflags glog szip lmdb homebrew/science/opencv; do brew install $x; done
+    brew install --with-python protobuf
+    for x in snappy leveldb gflags glog szip lmdb homebrew/science/opencv; do brew install $x; done
 
 Building boost from source is needed to link against your local Python (exceptions might be raised during some OS X installs, but **ignore** these and continue). If you do not need the Python wrapper, simply doing `brew install boost` is fine.
 
@@ -172,7 +173,8 @@ To edit the formulae in turn, run
 
 After this, run
 
-    for x in snappy leveldb protobuf gflags glog szip lmdb homebrew/science/opencv; do brew uninstall $x; brew install --build-from-source --fresh -vd $x; done
+    for x in snappy leveldb gflags glog szip lmdb homebrew/science/opencv; do brew uninstall $x; brew install --build-from-source --fresh -vd $x; done
+    brew uninstall protobuf; brew install --build-from-source --with-python --fresh -vd protobuf
     brew install --build-from-source --with-python --fresh -vd boost
 
 **Note** that `brew install --build-from-source --fresh -vd boost` is fine if you do not need the Caffe Python wrapper.
@@ -209,6 +211,27 @@ Be sure to set your MATLAB and Python paths in `Makefile.config` first!
 *Speed*: for a faster build, compile in parallel by doing `make all -j8` where 8 is the number of parallel threads for compilation (a good choice for the number of threads is the number of cores in your machine).
 
 Now that you have installed Caffe, check out the [MNIST demo](mnist.html) and the pretrained [ImageNet example](imagenet.html).
+
+### Compilation using CMake (beta)
+
+In lieu of manually editing `Makefile.config` to tell Caffe where dependencies are located, Caffe also provides a CMake-based build system (currently in "beta").
+It requires CMake version >= 2.8.8.
+The basic installation steps are as follows:
+
+    mkdir build
+    cd build
+    cmake ..
+    make all
+    make runtest
+
+#### Ubuntu 12.04
+
+Note that in Ubuntu 12.04, Aptitude will install version CMake 2.8.7 by default, which is not supported by Caffe's CMake build (requires at least 2.8.8).
+As a workaround, if you are using Ubuntu 12.04 you can try the following steps to install (or upgrade to) CMake 2.8.9:
+
+    sudo add-apt-repository ppa:ubuntu-sdk-team/ppa -y
+    sudo apt-get -y update
+    sudo apt-get install cmake
 
 ## Hardware Questions
 

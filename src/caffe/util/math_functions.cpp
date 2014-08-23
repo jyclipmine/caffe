@@ -316,14 +316,27 @@ template
 void caffe_rng_bernoulli<float>(const int n, const float p, unsigned int* r);
 
 template <>
-float caffe_cpu_dot<float>(const int n, const float* x, const float* y) {
-  return cblas_sdot(n, x, 1, y, 1);
+float caffe_cpu_strided_dot<float>(const int n, const float* x, const int incx,
+    const float* y, const int incy) {
+  return cblas_sdot(n, x, incx, y, incy);
 }
 
 template <>
-double caffe_cpu_dot<double>(const int n, const double* x, const double* y) {
-  return cblas_ddot(n, x, 1, y, 1);
+double caffe_cpu_strided_dot<double>(const int n, const double* x,
+    const int incx, const double* y, const int incy) {
+  return cblas_ddot(n, x, incx, y, incy);
 }
+
+template <typename Dtype>
+Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y) {
+  return caffe_cpu_strided_dot(n, x, 1, y, 1);
+}
+
+template
+float caffe_cpu_dot<float>(const int n, const float* x, const float* y);
+
+template
+double caffe_cpu_dot<double>(const int n, const double* x, const double* y);
 
 template <>
 int caffe_cpu_hamming_distance<float>(const int n, const float* x,
@@ -372,18 +385,6 @@ void caffe_cpu_scale<double>(const int n, const double alpha, const double *x,
                              double* y) {
   cblas_dcopy(n, x, 1, y, 1);
   cblas_dscal(n, alpha, y, 1);
-}
-
-
-using std::signbit;
-bool caffe_signbit(float arg) {
-    return signbit(arg);
-}
-bool caffe_signbit(double arg) {
-    return signbit(arg);
-}
-bool caffe_signbit(long double arg) {
-    return signbit(arg);
 }
 
 }  // namespace caffe

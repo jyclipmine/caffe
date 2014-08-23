@@ -89,6 +89,17 @@ int train() {
 
   LOG(INFO) << "Starting Optimization";
   caffe::SGDSolver<float> solver(solver_param);
+
+  // Set device id and mode
+  if (FLAGS_gpu >= 0) {
+    LOG(INFO) << "Use GPU with device ID " << FLAGS_gpu;
+    Caffe::SetDevice(FLAGS_gpu);
+    Caffe::set_mode(Caffe::GPU);
+  } else if (!solver_param.has_solver_mode()) {
+    LOG(INFO) << "Use CPU.";
+    Caffe::set_mode(Caffe::CPU);
+  }
+
   if (FLAGS_snapshot.size()) {
     LOG(INFO) << "Resuming from " << FLAGS_snapshot;
     solver.Solve(FLAGS_snapshot);
@@ -186,10 +197,10 @@ int time() {
       layers[i]->Forward(bottom_vecs[i], &top_vecs[i]);
     }
     LOG(INFO) << layername << "\tforward: " << timer.MilliSeconds() <<
-        " milli seconds.";
+        " milliseconds.";
   }
   LOG(INFO) << "Forward pass: " << forward_timer.MilliSeconds() <<
-      " milli seconds.";
+      " milliseconds.";
   Timer backward_timer;
   backward_timer.Start();
   for (int i = layers.size() - 1; i >= 0; --i) {
@@ -200,12 +211,12 @@ int time() {
                           &bottom_vecs[i]);
     }
     LOG(INFO) << layername << "\tbackward: "
-        << timer.MilliSeconds() << " milli seconds.";
+        << timer.MilliSeconds() << " milliseconds.";
   }
   LOG(INFO) << "Backward pass: " << backward_timer.MilliSeconds() <<
-      " milli seconds.";
+      " milliseconds.";
   LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() <<
-      " milli seconds.";
+      " milliseconds.";
   LOG(INFO) << "*** Benchmark ends ***";
   return 0;
 }
