@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "caffe/caffe.hpp"
+#include "caffe/util/window_proposal.hpp"
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <ctime>
@@ -18,7 +19,6 @@ using namespace cv;
 using namespace std;
 
 // function declarations
-int bing_boxes(const Mat& img, float boxes[], const int max_proposal_num);
 void boxes2conv5(const float boxes[], const int max_proposal_num,
     const int proposal_num, float conv5_windows[], float conv5_scales[],
     float valid_vec[]);
@@ -42,6 +42,8 @@ struct PrefetchParameterSet {
   float* valid_vec;
   float* channel_mean;
   Mat* img_ptr;
+  int (*window_proposal)(const Mat& img, float boxes[],
+      const int max_proposal_num);
 };
 
 void* prefetchThread(void* ptr) {
@@ -60,6 +62,8 @@ void* prefetchThread(void* ptr) {
   float* valid_vec = prefetch_param_ptr->valid_vec;
   float* channel_mean = prefetch_param_ptr->channel_mean;
   Mat* img_ptr = prefetch_param_ptr->img_ptr;
+  int (*window_proposal)(const Mat& img, float boxes[],
+      const int max_proposal_num) = prefetch_param_ptr->objectness;
   
   // load image from camera
   Mat temp_img(read_from_camera(pCapture), false); // do not copy data
@@ -67,8 +71,8 @@ void* prefetchThread(void* ptr) {
   resize(*img_ptr, *img_ptr, input_size);
   Mat2float(image_data, *img_ptr, channel_mean);
     
-  // run BING
-  int proposal_num = bing_boxes(*img_ptr, boxes_fetch, max_proposal_num);
+  // run objectness
+  int proposal_num = window_proposal(*img_ptr, boxes_fetch, max_proposal_num);
   boxes2conv5(boxes_fetch, max_proposal_num, proposal_num, conv5_windows,
       conv5_scales, valid_vec);
   return (void*)0;
@@ -113,7 +117,8 @@ int main(int argc, char** argv) {
   prefetch_param.valid_vec = valid_vec;
   prefetch_param.channel_mean = channel_mean;
   prefetch_param.img_ptr = &img_fetch;
-  
+  prefetch_param.window_proposal = &window_proposal_bing;
+
   // thread for fetching data
   pthread_t fetch_thread;
   // create prefetch thread
