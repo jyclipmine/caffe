@@ -3,18 +3,19 @@
 #include "ValStructVec.h"
 #include "CmShow.h"
 #include <algorithm>
+#include "caffe/common.hpp"
 
 namespace caffe {
 
 // the returned boxes are 0-indexed, [y1 x1 y2 x2]
-int window_proposal_bing(const Mat& img, float boxes[], const int max_proposal_num) {
+int window_proposal_bing(const Mat& img, float boxes[],
+    const int max_proposal_num) {
 	// Parameters of BING
 	const int max_size = 600, min_size = 80, im_width = 500;
 	static DataSetVOC dataset;
 	int base = 2, W = 8, NSS = 2, numPerSz = 250;
 	static Objectness objNess(dataset, base, W, NSS);
 	static ValStructVec<float, Vec4i> boxesTests;
-	
   // resize the image to have a fixed width
   const int width = img.cols;
   const int height = img.rows;
@@ -22,11 +23,11 @@ int window_proposal_bing(const Mat& img, float boxes[], const int max_proposal_n
 	const Size bing_size(width / scale, height / scale);
 	Mat resized_img;
 	resize(img, resized_img, bing_size);
-	
 	// run BING to get boxes
 	boxesTests.clear();
 	objNess.getObjBndBoxesSingleImg(resized_img, boxesTests, numPerSz);
-	
+	LOG(INFO) << "Finished running BING. got " << boxesTests.size()
+	    << " boxes in total";
 	// put the boxes into return array
 	memset(boxes, 0, max_proposal_num * 4 * sizeof(float));
 	int proposal_num = 0;
@@ -48,21 +49,8 @@ int window_proposal_bing(const Mat& img, float boxes[], const int max_proposal_n
 	      break;
 	  }
 	}
+	LOG(INFO) << "Returning " << proposal_num << " boxes";
 	return proposal_num;
-}
-
-void runVOC(double base, int W, int NSS, int numPerSz)
-{
-	srand((unsigned int)time(NULL));
-	DataSetVOC voc2007("/home/ronghang/workspace/VOC2007/");
-	voc2007.loadAnnotations();
-
-	printf("Dataset:`%s' with %d training and %d testing\n", _S(voc2007.wkDir), voc2007.trainNum, voc2007.testNum);
-	printf("Base = %g, W = %d, NSS = %d, perSz = %d\n", base, W, NSS, numPerSz);
-
-	Objectness objNess(voc2007, base, W, NSS);
-	vector<vector<Vec4i> > boxesTests;
-	objNess.getObjBndBoxesForTests(boxesTests, numPerSz);
 }
 
 }  // namespace caffe 
