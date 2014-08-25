@@ -415,7 +415,7 @@ class ScoredBoxes {
   int get_class_id() const { return class_id_; }
   int get_box_id() const { return box_id_; }
   float IoU(const ScoredBoxes& another_box) const;
-
+  
  private:
   int y1_;
   int x1_;

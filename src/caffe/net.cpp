@@ -5,6 +5,8 @@
 #include <utility>
 #include <vector>
 
+#include <ctime>
+
 #include "caffe/common.hpp"
 #include "caffe/layer.hpp"
 #include "caffe/net.hpp"

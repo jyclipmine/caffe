@@ -601,6 +601,16 @@ message NMSParameter {
   optional uint32 disp_num = 4 [default = 10];
 }
 
+//// Message that stores parameters used by NMSLayer
+//message NMSParameter {
+//  // threshold for scores
+//  optional float score_th = 1 [default = 6];
+//  // threshold for within-class nms
+//  optional float within_class_nms_th = 2 [default = 0.3];
+//  // threshold for across-class nms
+//  optional float across_class_nms_th = 3 [default = 0.1];
+//}
+
 // Message that stores parameters used by SPPWindowDataLayer
 message SPPWindowDataParameter {
   // Specify the spp5 feature cache dir
