@@ -63,7 +63,7 @@ void* prefetchThread(void* ptr) {
   float* channel_mean = prefetch_param_ptr->channel_mean;
   Mat* img_ptr = prefetch_param_ptr->img_ptr;
   int (*window_proposal)(const Mat& img, float boxes[],
-      const int max_proposal_num) = prefetch_param_ptr->objectness;
+      const int max_proposal_num) = prefetch_param_ptr->window_proposal;
   
   // load image from camera
   Mat temp_img(read_from_camera(pCapture), false); // do not copy data
