@@ -12,6 +12,7 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <ctime>
+#include <cfloat>
 #include <string>
 
 using namespace caffe; // NOLINT(build/namespaces)
@@ -19,12 +20,14 @@ using namespace cv;
 using namespace std;
 
 // function declarations
-void boxes2conv5(const float boxes[], const int max_proposal_num,
-    const int proposal_num, const int original_h, const int original_w,
-    const int resize_h, const int resize_w, float conv5_windows[],
-    float conv5_scales[], float valid_vec[]);
 const IplImage* read_from_camera(CvCapture* pCapture);
-void Mat2float(float image_data[], const Mat& img, const float channel_mean[]);
+void get_multiscale_image_data(float image_data[], const Mat& img,
+    const float channel_mean[], int input_h, int input_w, int scale_num,
+    const int* resized_h_arr, const int* resized_w_arr);
+void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
+    float valid_vec[], const float boxes[], const int max_proposal_num,
+    const int proposal_num, int original_h, int original_w, int scale_num,
+    const int* resized_h_arr, const int* resized_w_arr);
 void load_channel_mean(float channel_mean[], const char* filename);
 void load_class_name(vector<string>& class_name_vec, const char* filename);
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
@@ -35,7 +38,11 @@ struct PrefetchParameterSet {
   CvCapture* pCapture;
   int max_proposal_num;
   int class_num;
-  Size input_size;
+  int input_h;
+  int input_w;
+  int scale_num;
+  const int* resized_h_arr;
+  const int* resized_w_arr;
   float* image_data;
   float* conv5_windows;
   float* conv5_scales;
@@ -54,8 +61,11 @@ void* prefetchThread(void* ptr) {
   // Unpack prefetch_param
   CvCapture* pCapture = prefetch_param_ptr->pCapture;
   int max_proposal_num = prefetch_param_ptr->max_proposal_num;
-  // int class_num = prefetch_param_ptr->class_num;
-  Size input_size = prefetch_param_ptr->input_size;
+  int input_h = prefetch_param_ptr->input_h;
+  int input_w = prefetch_param_ptr->input_w;
+  int scale_num = prefetch_param_ptr->scale_num;
+  const int* resized_h_arr = prefetch_param_ptr->resized_h_arr;
+  const int* resized_w_arr = prefetch_param_ptr->resized_w_arr;
   float* image_data = prefetch_param_ptr->image_data;
   float* conv5_windows = prefetch_param_ptr->conv5_windows;
   float* conv5_scales = prefetch_param_ptr->conv5_scales;
@@ -67,48 +77,58 @@ void* prefetchThread(void* ptr) {
       const int max_proposal_num) = prefetch_param_ptr->window_proposal;
   
   // load image from camera
-  Mat temp_img(read_from_camera(pCapture), false); // do not copy data
-  temp_img.copyTo(*img_ptr); // copy data
-  const int original_h = img_ptr->rows;
-  const int original_w = img_ptr->cols;
+  Mat img(read_from_camera(pCapture), false); // do not copy data
+  img.copyTo(*img_ptr); // copy data here
+  const int original_h = img.rows; // should be 480
+  const int original_w = img.cols; // should be 640
   
   // run objectness on the 640x480 original image (not rescaled images)
-  int proposal_num = window_proposal(*img_ptr, boxes_fetch, max_proposal_num);
+  int proposal_num = window_proposal(img, boxes_fetch, max_proposal_num);
   
   // resize image, and convert resized images to float-point data
-  Mat resized_img;
-  resize(*img_ptr, resized_img, input_size);
-  Mat2float(image_data, resized_img, channel_mean);
+  get_multiscale_image_data(image_data, img, channel_mean, input_h, input_w,
+      scale_num, resized_h_arr, resized_w_arr);
   
   // match the boxes to conv5_windows and conv5_scales
-  int resize_h = resized_img.rows;
-  int resize_w = resized_img.cols;
-  boxes2conv5(boxes_fetch, max_proposal_num, proposal_num, original_h, original_w,
-      resize_h, resize_w, conv5_windows, conv5_scales, valid_vec);
-      
+  get_multiscale_conv5(conv5_windows, conv5_scales, valid_vec, boxes_fetch,
+      max_proposal_num, proposal_num, original_h, original_w, scale_num,
+      resized_h_arr, resized_w_arr);
   return (void*)0;
 }
 
 int main(int argc, char** argv) {
   CHECK_EQ(argc, 6) << "Input argument number mismatch";
   
-  // Parameters
+  // general parameters
   CvCapture* pCapture = cvCreateCameraCapture(0);
   const int max_proposal_num = 1000;
   const int class_num = 7604;
   const int device_id = atoi(argv[5]);
-  const int image_w = 917;
-  const int image_h = 688;
-  const Size input_size(image_w, image_h);
+  
+  /*
+  // 5-scale parameters
+  const int input_h = 1200;
+  const int input_w = 1600;
+  const int scale_num = 5;
+  const int resized_h_arr[scale_num] = { 480,  576,  688,  864,  1200};
+  const int resized_w_arr[scale_num] = { 640,  768,  917,  1152, 1600};
+  */
+  // 1-scale parameters
+  const int input_h = 688;
+  const int input_w = 917;
+  const int channels = 3;
+  const int scale_num = 1;
+  const int resized_h_arr[scale_num] = { 688};
+  const int resized_w_arr[scale_num] = { 917};
   
   // Storage
-  float image_data[image_h*image_w*3];
+  float image_data[input_h*input_w*channels*scale_num];
   float boxes_fetch[max_proposal_num*4];
   float boxes_show[max_proposal_num*4];
   float conv5_windows[max_proposal_num*4];
   float conv5_scales[max_proposal_num];
   float valid_vec[max_proposal_num];
-  float channel_mean[3];
+  float channel_mean[channels];
   float result_vecs[max_proposal_num*3];
   const float* keep_vec = result_vecs;
   const float* class_id_vec = result_vecs + max_proposal_num;
@@ -120,7 +140,12 @@ int main(int argc, char** argv) {
   prefetch_param.pCapture = pCapture;
   prefetch_param.max_proposal_num = max_proposal_num;
   prefetch_param.class_num = class_num;
-  prefetch_param.input_size = input_size;
+  
+  prefetch_param.input_h = input_h;
+  prefetch_param.input_w = input_w;
+  prefetch_param.scale_num = scale_num;
+  prefetch_param.resized_h_arr = resized_h_arr;
+  prefetch_param.resized_w_arr = resized_w_arr;
   prefetch_param.image_data = image_data;
   prefetch_param.conv5_windows = conv5_windows;
   prefetch_param.conv5_scales = conv5_scales;
@@ -145,7 +170,7 @@ int main(int argc, char** argv) {
   vector<string> class_name_vec(class_num);
   vector<Blob<float>*>& input_blobs = caffe_test_net.input_blobs();
   vector<Blob<float>*>& output_blobs = caffe_test_net.output_blobs();
-  CHECK_EQ(input_blobs[0]->count(), image_h * image_w *3)
+  CHECK_EQ(input_blobs[0]->count(), input_h * input_w * channels * scale_num)
       << "input image_data mismatch";
   CHECK_EQ(input_blobs[1]->count(), max_proposal_num*4)
       << "input conv5_windows mismatch";
@@ -239,58 +264,92 @@ const IplImage* read_from_camera(CvCapture* pCapture) {
   return pFrame;
 }
 
-void boxes2conv5(const float boxes[], const int max_proposal_num,
-    const int proposal_num, const int original_h, const int original_w,
-    const int resize_h, const int resize_w, float conv5_windows[],
-    float conv5_scales[], float valid_vec[]) {
+void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
+    float valid_vec[], const float boxes[], const int max_proposal_num,
+    const int proposal_num, int original_h, int original_w, int scale_num,
+    const int* resized_h_arr, const int* resized_w_arr) {
   const int conv5_stride = 16;
-  const float zoom_h =
-      static_cast<float>(resize_h) / static_cast<float>(original_h);
-  const float zoom_w =
-      static_cast<float>(resize_w) / static_cast<float>(original_w);
-
-  // zero out boxes
+  // zero out all data
   memset(conv5_windows, 0, max_proposal_num * 4 * sizeof(float));
-  // zero out valid_vec
+  memset(conv5_scales, 0, max_proposal_num * sizeof(float));
   memset(valid_vec, 0, max_proposal_num * sizeof(float));
   // calculate the corresponing windows on conv5 feature map
   for (int i = 0; i < proposal_num; i++) {
-    float y1 = zoom_h * boxes[4*i];
-    float x1 = zoom_w * boxes[4*i+1];
-    float y2 = zoom_h * boxes[4*i+2];
-    float x2 = zoom_w * boxes[4*i+3];
+    float y1 = boxes[4*i];
+    float x1 = boxes[4*i+1];
+    float y2 = boxes[4*i+2];
+    float x2 = boxes[4*i+3];
+    // find the best matching scale
+    float area = (y2 - y1 + 1) * (x2 - x1 + 1);
+    float min_area_diff = -FLT_MAX;
+    const float desired_area = 50176; // 224 * 224;
+    int matching_scale = -1;
+    float matching_zoom_h = 0, matching_zoom_w = 0;
+    for (int scale = 0; scale < scale_num; scale++) {
+      const int resized_h = resized_h_arr[scale];
+      const int resized_w = resized_w_arr[scale];
+      const float zoom_h =
+        static_cast<float>(resized_h) / static_cast<float>(original_h);
+      const float zoom_w =
+        static_cast<float>(resized_w) / static_cast<float>(original_w);
+      float zoomed_area = area * zoom_h * zoom_w;
+      float area_diff = abs(zoomed_area - desired_area);
+      if (area_diff < min_area_diff) {
+        min_area_diff = area_diff;
+        matching_scale = scale;
+        matching_zoom_h = zoom_h;
+        matching_zoom_w = zoom_w;
+      }
+    }
+    conv5_scales[i] = matching_scale;
     // round and add 1 to ends
-    conv5_windows[4*i  ] = static_cast<int>(0.5f + y1 / conv5_stride);
-    conv5_windows[4*i+1] = static_cast<int>(0.5f + x1 / conv5_stride);
-    conv5_windows[4*i+2] = static_cast<int>(0.5f + y2 / conv5_stride) + 1;
-    conv5_windows[4*i+3] = static_cast<int>(0.5f + x2 / conv5_stride) + 1;
+    conv5_windows[4*i  ] =
+        static_cast<int>(0.5f + y1 * matching_zoom_h / conv5_stride);
+    conv5_windows[4*i+1] =
+        static_cast<int>(0.5f + x1 * matching_zoom_w / conv5_stride);
+    conv5_windows[4*i+2] =
+        static_cast<int>(0.5f + y2 * matching_zoom_h / conv5_stride) + 1;
+    conv5_windows[4*i+3] =
+        static_cast<int>(0.5f + x2 * matching_zoom_w / conv5_stride) + 1;
     // set valid to be true
     valid_vec[i] = 1;
   }
-  // for now, set all scales to be zero
-  memset(conv5_scales, 0, max_proposal_num * sizeof(float));
 }
 
 // do mean subtraction and convert into float type
 // Mat is already in BGR channel
-void Mat2float(float image_data[], const Mat& img, const float channel_mean[]) {
+void get_multiscale_image_data(float image_data[], const Mat& img,
+    const float channel_mean[], int input_h, int input_w, int scale_num,
+    const int* resized_h_arr, const int* resized_w_arr) {
   const int channels = 3;
-  const int width = img.cols;
-  const int height = img.rows;
-  for (int c = 0; c < channels; ++c) {
-    for (int h = 0; h < height; ++h) {
-      for (int w = 0; w < width; ++w) {
-        float pixel = static_cast<float>(img.at<cv::Vec3b>(h, w)[c]);
-        image_data[w + width * (h + height * c)] = pixel - channel_mean[c];
+  // image offset for the expanded image
+  const int image_offset = input_h * input_w * channels;
+  // zero out image data
+  memset(image_data, 0, image_offset * scale_num * sizeof(float));
+  // resize image and perform mean subtraction
+  Mat resized_img;
+  for (int scale = 0; scale < scale_num; scale++) {
+    const int resized_h = resized_h_arr[scale];
+    const int resized_w = resized_w_arr[scale];
+    resize(img, resized_img, Size(resized_w, resized_h));
+    for (int c = 0; c < channels; ++c) {
+      for (int h = 0; h < resized_h; ++h) {
+        for (int w = 0; w < resized_w; ++w) {
+          float pixel = static_cast<float>(resized_img.at<cv::Vec3b>(h, w)[c]);
+          int index = (image_offset * scale)
+              + (w + resized_w * (h + resized_h * c));
+          image_data[index] = pixel - channel_mean[c];
+        }
       }
     }
   }
 }
 
 void load_channel_mean(float channel_mean[], const char* filename) {
+  const int channels = 3;
   ifstream fin(filename, ios::binary);
   CHECK(fin) << "cannot open channel mean file";
-  fin.read(reinterpret_cast<char*>(channel_mean), 3*sizeof(float));
+  fin.read(reinterpret_cast<char*>(channel_mean), channels * sizeof(float));
   CHECK(fin) << "error reading channel mean file";
   fin.close();
   LOG(INFO) << "Channel mean: B = " << channel_mean[0]
@@ -318,6 +377,7 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
   char label[200];
   int obj_num = 0;
   const int strong_cls_num = 200;
+  const int line_width = 3;
   for (int box_id = 0; box_id < max_proposal_num; box_id++) {
     if (keep_vec[box_id]) {
       int y1 = static_cast<int>(boxes[box_id*4  ]);
@@ -328,10 +388,10 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
-      line(img, ul, ur, (class_id < strong_cls_num ? blu : red), 3);
-      line(img, ur, lr, (class_id < strong_cls_num ? blu : red), 3);
-      line(img, lr, ll, (class_id < strong_cls_num ? blu : red), 3);
-      line(img, ll, ul, (class_id < strong_cls_num ? blu : red), 3);
+      line(img, ul, ur, (class_id < strong_cls_num ? blu : red), line_width);
+      line(img, ur, lr, (class_id < strong_cls_num ? blu : red), line_width);
+      line(img, lr, ll, (class_id < strong_cls_num ? blu : red), line_width);
+      line(img, ll, ul, (class_id < strong_cls_num ? blu : red), line_width);
       IplImage iplimage = img;
       cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
           (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
