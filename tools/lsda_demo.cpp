@@ -97,7 +97,8 @@ void* prefetchThread(void* ptr) {
 }
 
 int main(int argc, char** argv) {
-  CHECK_EQ(argc, 7) << "Input argument number mismatch";
+  CHECK_EQ(argc, 7) << "usage: lsda_demo.bin [net prototext] [net protobinary]"
+      << " [channel mean file] [class name file] [scale num] [gpu id]"
   
   // general parameters
   CvCapture* pCapture = cvCreateCameraCapture(0);
