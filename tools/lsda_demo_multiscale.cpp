@@ -15,7 +15,7 @@
 #include <cfloat>
 #include <string>
 
-using namespace caffe; // NOLINT(build/namespaces)
+using namespace caffe;
 using namespace cv;
 using namespace std;
 
@@ -97,29 +97,50 @@ void* prefetchThread(void* ptr) {
 }
 
 int main(int argc, char** argv) {
-  CHECK_EQ(argc, 6) << "Input argument number mismatch";
+  CHECK_EQ(argc, 7) << "Input argument number mismatch";
   
   // general parameters
   CvCapture* pCapture = cvCreateCameraCapture(0);
   const int max_proposal_num = 1000;
   const int class_num = 7604;
-  const int device_id = atoi(argv[5]);
-  
-  /*
-  // 5-scale parameters
-  const int input_h = 1200;
-  const int input_w = 1600;
-  const int scale_num = 5;
-  const int resized_h_arr[scale_num] = { 480,  576,  688,  864,  1200};
-  const int resized_w_arr[scale_num] = { 640,  768,  917,  1152, 1600};
-  */
-  // 1-scale parameters
-  const int input_h = 688;
-  const int input_w = 917;
+  const int scale_num = atoi(argv[5]);
+  const int device_id = atoi(argv[6]);
   const int channels = 3;
-  const int scale_num = 1;
-  const int resized_h_arr[scale_num] = { 688};
-  const int resized_w_arr[scale_num] = { 917};
+  int input_h;
+  int input_w;
+  const int* resized_h_arr;
+  const int* resized_w_arr;
+  
+  // 5-scale parameters
+  const int input_h_5_scale = 1200;
+  const int input_w_5_scale = 1600;
+  const int resized_h_arr_5_scale[] = { 480,  576,  688,  864,  1200};
+  const int resized_w_arr_5_scale[] = { 640,  768,  917,  1152, 1600};
+  // 1-scale parameters
+  const int input_h_1_scale = 688;
+  const int input_w_1_scale = 917;
+  const int resized_h_arr_1_scale[] = { 688};
+  const int resized_w_arr_1_scale[] = { 917};
+  
+  // match_scale
+  switch (scale_num) {
+    case 5:
+      input_h = input_h_5_scale;
+      input_w = input_w_5_scale;
+      resized_h_arr = resized_h_arr_5_scale;
+      resized_w_arr = resized_w_arr_5_scale;
+      break;
+    case 1:
+      input_h = input_h_1_scale;
+      input_w = input_w_1_scale;
+      resized_h_arr = resized_h_arr_1_scale;
+      resized_w_arr = resized_w_arr_1_scale;
+      break;
+    default:
+      LOG(FATAL) << "Invalid scale_num: " << scale_num
+          << ". scale_num must be either 1 or 5";
+      break;
+  }
   
   // Storage
   float* image_data = new float[input_h*input_w*channels*scale_num];
@@ -209,21 +230,21 @@ int main(int argc, char** argv) {
     caffe_copy(input_blobs[2]->count(), conv5_scales,
         input_blobs[2]->mutable_gpu_data());
     caffe_copy(input_blobs[3]->count(), boxes_fetch,
-        input_blobs[3]->mutable_cpu_data());
+        input_blobs[3]->mutable_cpu_data()); // To CPU
     caffe_copy(input_blobs[4]->count(), valid_vec,
-        input_blobs[4]->mutable_cpu_data());
+        input_blobs[4]->mutable_cpu_data()); // To CPU
     // create prefetch thread
     CHECK(!pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
         << "Failed to create prefetch thread";
     finish = clock();
-    LOG(INFO) << "Fetch data and load data to gpu: "
+    LOG(INFO) << "LSDA: fetch data and load data to gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
 
     start = clock();
     // forward network
     caffe_test_net.ForwardPrefilled();
     finish = clock();
-    LOG(INFO) << "Caffe forward image: "
+    LOG(INFO) << "LSDA: forward image: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
@@ -231,23 +252,21 @@ int main(int argc, char** argv) {
     caffe_copy(output_blobs[0]->count(), output_blobs[0]->cpu_data(),
         result_vecs);
     finish = clock();
-    LOG(INFO) << "Caffe retrieve data from gpu: "
+    LOG(INFO) << "LSDA: retrieve data from gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
     // draw results
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes_show,
         max_proposal_num, class_name_vec);
-    imshow("detection results", img_show);
+    imshow("LSDA Detection Results", img_show);
     waitKey(40);
     finish = clock();
-    LOG(INFO) << "Show result: " << 1000 * (finish - start) / CLOCKS_PER_SEC
-        << " ms";
+    LOG(INFO) << "LSDA: show result: "
+        << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     // Estimate FPS
     finish_all = clock();
-    LOG(INFO) << "Total Time: "
-        << 1000 * (finish_all - start_all) / CLOCKS_PER_SEC << " ms";
     LOG(INFO) << "Frame Rate: "
         << CLOCKS_PER_SEC / float(finish_all - start_all) << " fps";
   }
@@ -274,6 +293,7 @@ void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
   memset(conv5_scales, 0, max_proposal_num * sizeof(float));
   memset(valid_vec, 0, max_proposal_num * sizeof(float));
   // calculate the corresponing windows on conv5 feature map
+  const float desired_area = 50176; // 224 * 224;
   for (int i = 0; i < proposal_num; i++) {
     float y1 = boxes[4*i];
     float x1 = boxes[4*i+1];
@@ -282,7 +302,6 @@ void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
     // find the best matching scale
     float area = (y2 - y1 + 1) * (x2 - x1 + 1);
     float min_area_diff = FLT_MAX;
-    const float desired_area = 50176; // 224 * 224;
     int matching_scale = -1;
     float matching_zoom_h = 0, matching_zoom_w = 0;
     for (int scale = 0; scale < scale_num; scale++) {
@@ -302,6 +321,8 @@ void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
       }
     }
     conv5_scales[i] = matching_scale;
+    // LOG(INFO) << "scale: " << matching_scale << " zoom_h: "
+    //     << matching_zoom_h << " zoom_w: " << matching_zoom_w;
     // round and add 1 to ends
     conv5_windows[4*i  ] =
         static_cast<int>(0.5f + y1 * matching_zoom_h / conv5_stride);
@@ -337,7 +358,7 @@ void get_multiscale_image_data(float image_data[], const Mat& img,
         for (int w = 0; w < resized_w; ++w) {
           float pixel = static_cast<float>(resized_img.at<cv::Vec3b>(h, w)[c]);
           int index = (image_offset * scale)
-              + (w + resized_w * (h + resized_h * c));
+              + (w + input_w * (h + input_h * c));
           image_data[index] = pixel - channel_mean[c];
         }
       }

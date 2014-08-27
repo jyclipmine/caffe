@@ -26,8 +26,6 @@ int window_proposal_bing(const Mat& img, float boxes[],
 	// run BING to get boxes
 	boxesTests.clear();
 	objNess.getObjBndBoxesSingleImg(resized_img, boxesTests, numPerSz);
-	LOG(INFO) << "Finished running BING. got " << boxesTests.size()
-	    << " boxes in total";
 	// put the boxes into return array
 	memset(boxes, 0, max_proposal_num * 4 * sizeof(float));
 	int proposal_num = 0;
@@ -49,7 +47,6 @@ int window_proposal_bing(const Mat& img, float boxes[],
 	      break;
 	  }
 	}
-	LOG(INFO) << "Returning " << proposal_num << " boxes";
 	return proposal_num;
 }
 
