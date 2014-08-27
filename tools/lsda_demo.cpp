@@ -97,11 +97,13 @@ void* prefetchThread(void* ptr) {
 }
 
 int main(int argc, char** argv) {
-  CHECK_EQ(argc, 7) << "usage: lsda_demo.bin [net prototext] [net protobinary]"
-      << " [channel mean file] [class name file] [scale num] [gpu id]";
+  CHECK_EQ(argc, 8) << "usage: lsda_demo.bin [net prototext] [net protobinary]"
+      << " [channel mean file] [class name file] [scale num (5 or 1)] [gpu id]"
+      << " [camera id]";
   
   // general parameters
-  CvCapture* pCapture = cvCreateCameraCapture(0);
+  int camera_id = atoi(argv[7]);
+  CvCapture* pCapture = cvCreateCameraCapture(camera_id);
   const int max_proposal_num = 1000;
   const int class_num = 7604;
   const int scale_num = atoi(argv[5]);
