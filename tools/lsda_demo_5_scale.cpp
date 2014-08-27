@@ -281,7 +281,7 @@ void get_multiscale_conv5(float conv5_windows[], float conv5_scales[],
     float x2 = boxes[4*i+3];
     // find the best matching scale
     float area = (y2 - y1 + 1) * (x2 - x1 + 1);
-    float min_area_diff = -FLT_MAX;
+    float min_area_diff = FLT_MAX;
     const float desired_area = 50176; // 224 * 224;
     int matching_scale = -1;
     float matching_zoom_h = 0, matching_zoom_w = 0;
