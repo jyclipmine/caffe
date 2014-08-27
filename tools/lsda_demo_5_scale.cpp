@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
   const int resized_w_arr[scale_num] = { 917};
   
   // Storage
-  float image_data[input_h*input_w*channels*scale_num];
+  float* image_data = new float[input_h*input_w*channels*scale_num];
   float boxes_fetch[max_proposal_num*4];
   float boxes_show[max_proposal_num*4];
   float conv5_windows[max_proposal_num*4];
