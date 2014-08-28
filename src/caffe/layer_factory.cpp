@@ -1,6 +1,3 @@
-#ifndef CAFFE_LAYER_FACTORY_HPP_
-#define CAFFE_LAYER_FACTORY_HPP_
-
 #include <string>
 
 #include "caffe/layer.hpp"
@@ -110,5 +107,3 @@ template Layer<float>* GetLayer(const LayerParameter& param);
 template Layer<double>* GetLayer(const LayerParameter& param);
 
 }  // namespace caffe
-
-#endif  // CAFFE_LAYER_FACTORY_HPP_
