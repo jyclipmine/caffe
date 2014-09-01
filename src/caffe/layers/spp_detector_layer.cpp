@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <leveldb/db.h>
 #include <pthread.h>
-
+#include <cfloat>
 #include <vector>
 
 #include "caffe/layer.hpp"
@@ -14,6 +14,9 @@
 #include "caffe/proto/caffe.pb.h"
 
 namespace caffe {
+
+using std::min;
+using std::max;
 
 template <typename Dtype>
 void SPPDetectorLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
@@ -83,35 +86,41 @@ void SPPDetectorLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       int roi_start_w = conv5_windows[n*4+1];
       int roi_end_h   = conv5_windows[n*4+2];
       int roi_end_w   = conv5_windows[n*4+3];
-      if (roi_start_h || roi_start_w || roi_end_h || roi_end_w) {
-        int s = conv5_scales[n];
-        float bin_size_h =
-            static_cast<float>(roi_end_h - roi_start_h) / bin_num_h;
-        float bin_size_w =
-            static_cast<float>(roi_end_w - roi_start_w) / bin_num_w;
-        for (int c = 0; c < channels; ++c) {
-          for (int ph = 0; ph < bin_num_h; ++ph) {
-            for (int pw = 0; pw < bin_num_w; ++pw) {
-              int hstart = roi_start_h + std::max<int>(floor(ph * bin_size_h),
-                  0);
-              int wstart = roi_start_w + std::max<int>(floor(pw * bin_size_w),
-                  0);
-              int hend = std::min<int>(roi_start_h
-                  + ceil((ph + 1) * bin_size_h), roi_end_h);
-              int wend = std::min<int>(roi_start_w
-                  + ceil((pw + 1) * bin_size_w), roi_end_w);
-              int top_index = ((c * bin_num_h + ph) * bin_num_w + pw)
-                  + layer_offset + n * output_dim_;
-              for (int h = hstart; h < hend; ++h) {
-                for (int w = wstart; w < wend; ++w) {
-                  int bottom_index =
-                      (((s * channels + c) * height + h) * width + w);
-                  if (bottom_data[bottom_index] > top_data[top_index]) {
-                    top_data[top_index] = bottom_data[bottom_index];
-                  }
+      int s = conv5_scales[n];
+      float bin_size_h =
+          static_cast<float>(roi_end_h - roi_start_h) / bin_num_h;
+      float bin_size_w =
+          static_cast<float>(roi_end_w - roi_start_w) / bin_num_w;
+      for (int c = 0; c < channels; ++c) {
+        for (int ph = 0; ph < bin_num_h; ++ph) {
+          for (int pw = 0; pw < bin_num_w; ++pw) {
+            int hstart = roi_start_h + max<int>(floor(ph * bin_size_h),
+                0);
+            int wstart = roi_start_w + max<int>(floor(pw * bin_size_w),
+                0);
+            int hend = min<int>(roi_start_h
+                + ceil((ph + 1) * bin_size_h), roi_end_h);
+            int wend = min<int>(roi_start_w
+                + ceil((pw + 1) * bin_size_w), roi_end_w);
+            hstart = max(hstart, 0);
+            wstart = max(wstart, 0);
+            hend = min(hend, height);
+            wend = min(wend, width);
+            Dtype maxval = -FLT_MAX;
+            bool pooled = false;
+            for (int h = hstart; h < hend; ++h) {
+              for (int w = wstart; w < wend; ++w) {
+                pooled = true;
+                int bottom_index =
+                    (((s * channels + c) * height + h) * width + w);
+                if (bottom_data[bottom_index] > maxval) {
+                  maxval = bottom_data[bottom_index];
                 }
               }
             }
+            int top_index = ((c * bin_num_h + ph) * bin_num_w + pw)
+                + layer_offset + n * output_dim_;
+            top_data[top_index] = (pooled ? maxval : 0);
           }
         }
       }

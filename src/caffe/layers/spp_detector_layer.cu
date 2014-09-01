@@ -32,33 +32,37 @@ __global__ void MaxPoolForwardLayer(const int nthread, const Dtype* bottom_data,
     int roi_start_w = conv5_windows[n*4+1];
     int roi_end_h   = conv5_windows[n*4+2];
     int roi_end_w   = conv5_windows[n*4+3];
-    if (roi_start_h || roi_start_w || roi_end_h || roi_end_w) {
-      int s = conv5_scales[n];
-      float bin_size_h = static_cast<float>(roi_end_h - roi_start_h) 
-          / bin_num_h;
-      float bin_size_w = static_cast<float>(roi_end_w - roi_start_w)
-          / bin_num_w;
-      int hstart = roi_start_h + max(static_cast<int>(floor(ph * bin_size_h)),
-          0);
-      int wstart = roi_start_w + max(static_cast<int>(floor(pw * bin_size_w)),
-          0);
-      int hend = min(static_cast<int>(roi_start_h
-          + ceil((ph + 1) * bin_size_h)), roi_end_h);
-      int wend = min(static_cast<int>(roi_start_w
-          + ceil((pw + 1) * bin_size_w)), roi_end_w);
-      Dtype maxval = -FLT_MAX;
-      for (int h = hstart; h < hend; ++h) {
-        for (int w = wstart; w < wend; ++w) {
-          int bottom_index = (((s * channels + c) * height + h) * width + w);
-          if (bottom_data[bottom_index] > maxval) {
-            maxval = bottom_data[bottom_index];
-          }
+    int s = conv5_scales[n];
+    float bin_size_h = static_cast<float>(roi_end_h - roi_start_h) 
+        / bin_num_h;
+    float bin_size_w = static_cast<float>(roi_end_w - roi_start_w)
+        / bin_num_w;
+    int hstart = roi_start_h + max(static_cast<int>(floor(ph * bin_size_h)),
+        0);
+    int wstart = roi_start_w + max(static_cast<int>(floor(pw * bin_size_w)),
+        0);
+    int hend = min(static_cast<int>(roi_start_h
+        + ceil((ph + 1) * bin_size_h)), roi_end_h);
+    int wend = min(static_cast<int>(roi_start_w
+        + ceil((pw + 1) * bin_size_w)), roi_end_w);
+    hstart = max(hstart, 0);
+    wstart = max(wstart, 0);
+    hend = min(hend, height);
+    wend = min(wend, width);
+    Dtype maxval = -FLT_MAX;
+    bool pooled = false;
+    for (int h = hstart; h < hend; ++h) {
+      for (int w = wstart; w < wend; ++w) {
+        pooled = true;
+        int bottom_index = (((s * channels + c) * height + h) * width + w);
+        if (bottom_data[bottom_index] > maxval) {
+          maxval = bottom_data[bottom_index];
         }
       }
-      int top_index = ((c * bin_num_h + ph) * bin_num_w + pw) + layer_offset
-          + n * output_dim;
-      top_data[top_index] = maxval;
     }
+    int top_index = ((c * bin_num_h + ph) * bin_num_w + pw) + layer_offset
+        + n * output_dim;
+    top_data[top_index] = (pooled ? maxval : 0);
   }
 }
 
