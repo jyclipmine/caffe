@@ -4,6 +4,10 @@ PROJECT := caffe
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
 
+# GOP
+# overwrite existing compiler and force using g++-4.8
+CUSTOM_CXX := g++-4.8
+
 BUILD_DIR_LINK := $(BUILD_DIR)
 RELEASE_BUILD_DIR := .$(BUILD_DIR)_release
 DEBUG_BUILD_DIR := .$(BUILD_DIR)_debug
@@ -158,6 +162,8 @@ ifneq ($(CPU_ONLY), 1)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
 	LIBRARIES := cudart cublas curand
 endif
+# GOP
+# Add GOP Libraries
 LIBRARY_DIRS += lib/gop
 LIBRARIES += \
 	glog gflags pthread protobuf leveldb snappy \
@@ -165,7 +171,7 @@ LIBRARIES += \
 	boost_system \
 	hdf5_hl hdf5 \
 	opencv_core opencv_highgui opencv_imgproc \
-	gop imgproc proposals contour
+	gop contour imgproc proposals learning libsvm proposals segmentation util jpeg png gomp lbfgs
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall -Wno-sign-compare
 
