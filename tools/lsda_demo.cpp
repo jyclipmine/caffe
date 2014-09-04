@@ -81,8 +81,13 @@ void* prefetchThread(void* ptr) {
   const int original_w = img.cols; // should be 640
   
   // run objectness on the 640x480 original image (not rescaled images)
+  clock_t start, finish;
+  start = clock();
   int proposal_num = window_proposer->propose(img, boxes_fetch,
       max_proposal_num);
+  finish = clock();
+  LOG(INFO) << "LSDA Perfetch Thread: Window Proposal: "
+      << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
   
   // resize image, and convert resized images to float-point data
   get_multiscale_image_data(image_data, img, channel_mean, input_h, input_w,
@@ -240,7 +245,7 @@ int main(int argc, char** argv) {
     CHECK(!pthread_create(&fetch_thread, NULL, prefetchThread, &prefetch_param))
         << "Failed to create prefetch thread";
     finish = clock();
-    LOG(INFO) << "LSDA: fetch data and load data to gpu: "
+    LOG(INFO) << "LSDA Main Thread: fetch data and load data to gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
 
     start = clock();
