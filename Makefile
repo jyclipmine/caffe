@@ -1,6 +1,5 @@
 # The makefile for caffe. Pretty hacky.
 PROJECT := caffe
-CUSTOM_CXX := g++-4.8
 
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
@@ -166,7 +165,7 @@ LIBRARIES += \
 	boost_system \
 	hdf5_hl hdf5 \
 	opencv_core opencv_highgui opencv_imgproc \
-	gop
+	gop imgproc proposals contour
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall -Wno-sign-compare
 
