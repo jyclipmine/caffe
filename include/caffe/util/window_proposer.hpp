@@ -23,6 +23,16 @@ public:
       const int max_proposal_num);
 };
 
+class GOPWindowProposer: public WindowProposer {
+public:
+  GOPWindowProposer();
+  ~GOPWindowProposer();
+  virtual int propose(const cv::Mat& img, float boxes[],
+      const int max_proposal_num);
+private:
+  void* parameters_;
+};
+
 }  // namespace caffe
 
 #endif // CAFFE_UTIL_WINDOW_PROPOSAL_H_
