@@ -1,5 +1,6 @@
 # The makefile for caffe. Pretty hacky.
 PROJECT := caffe
+CUSTOM_CXX := g++-4.8
 
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
@@ -158,12 +159,14 @@ ifneq ($(CPU_ONLY), 1)
 	LIBRARY_DIRS += $(CUDA_LIB_DIR)
 	LIBRARIES := cudart cublas curand
 endif
+LIBRARY_DIRS += lib/gop
 LIBRARIES += \
 	glog gflags pthread protobuf leveldb snappy \
 	lmdb \
 	boost_system \
 	hdf5_hl hdf5 \
-	opencv_core opencv_highgui opencv_imgproc
+	opencv_core opencv_highgui opencv_imgproc \
+	gop
 PYTHON_LIBRARIES := boost_python python2.7
 WARNINGS := -Wall -Wno-sign-compare
 

@@ -176,7 +176,8 @@ int main(int argc, char** argv) {
   prefetch_param.valid_vec = valid_vec;
   prefetch_param.channel_mean = channel_mean;
   prefetch_param.img_ptr = &img_fetch;
-  prefetch_param.window_proposer = new BINGWindowProposer();
+  // prefetch_param.window_proposer = new BINGWindowProposer();
+  prefetch_param.window_proposer = new GOPWindowProposer();
 
   // thread for fetching data
   pthread_t fetch_thread;
