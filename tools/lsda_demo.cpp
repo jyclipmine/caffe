@@ -8,7 +8,7 @@
 #include <fstream>
 
 #include "caffe/caffe.hpp"
-#include "caffe/util/window_proposal.hpp"
+#include "caffe/util/window_proposer.hpp"
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <ctime>
@@ -50,8 +50,7 @@ struct PrefetchParameterSet {
   float* valid_vec;
   float* channel_mean;
   Mat* img_ptr; // 640x480, copied from the original image from camra
-  int (*window_proposal)(const Mat& img, float boxes[],
-      const int max_proposal_num);
+  WindowProposer* window_proposer;
 };
 
 void* prefetchThread(void* ptr) {
@@ -73,8 +72,7 @@ void* prefetchThread(void* ptr) {
   float* valid_vec = prefetch_param_ptr->valid_vec;
   float* channel_mean = prefetch_param_ptr->channel_mean;
   Mat* img_ptr = prefetch_param_ptr->img_ptr;
-  int (*window_proposal)(const Mat& img, float boxes[],
-      const int max_proposal_num) = prefetch_param_ptr->window_proposal;
+  WindowProposer* window_proposer = prefetch_param_ptr->window_proposer;
   
   // load image from camera
   Mat img(read_from_camera(pCapture), false); // do not copy data
@@ -83,7 +81,8 @@ void* prefetchThread(void* ptr) {
   const int original_w = img.cols; // should be 640
   
   // run objectness on the 640x480 original image (not rescaled images)
-  int proposal_num = window_proposal(img, boxes_fetch, max_proposal_num);
+  int proposal_num = window_proposer->propose(img, boxes_fetch,
+      max_proposal_num);
   
   // resize image, and convert resized images to float-point data
   get_multiscale_image_data(image_data, img, channel_mean, input_h, input_w,
@@ -177,7 +176,7 @@ int main(int argc, char** argv) {
   prefetch_param.valid_vec = valid_vec;
   prefetch_param.channel_mean = channel_mean;
   prefetch_param.img_ptr = &img_fetch;
-  prefetch_param.window_proposal = &window_proposal_bing;
+  prefetch_param.window_proposer = new BINGWindowProposer();
 
   // thread for fetching data
   pthread_t fetch_thread;

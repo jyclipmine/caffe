@@ -4,11 +4,12 @@
 #include "CmShow.h"
 #include <algorithm>
 #include "caffe/common.hpp"
+#include "caffe/util/window_proposer.hpp";
 
 namespace caffe {
 
 // the returned boxes are 0-indexed, [y1 x1 y2 x2]
-int window_proposal_bing(const Mat& img, float boxes[],
+int BINGWindowProposer::propose(const Mat& img, float boxes[],
     const int max_proposal_num) {
 	// Parameters of BING
 	const int max_size = 600, min_size = 80, im_width = 500;
