@@ -252,7 +252,7 @@ int main(int argc, char** argv) {
     // forward network
     caffe_test_net.ForwardPrefilled();
     finish = clock();
-    LOG(INFO) << "LSDA: forward image: "
+    LOG(INFO) << "LSDA Main Thread forward image: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
@@ -260,7 +260,7 @@ int main(int argc, char** argv) {
     caffe_copy(output_blobs[0]->count(), output_blobs[0]->cpu_data(),
         result_vecs);
     finish = clock();
-    LOG(INFO) << "LSDA: retrieve data from gpu: "
+    LOG(INFO) << "LSDA Main Thread retrieve data from gpu: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     start = clock();
@@ -270,7 +270,7 @@ int main(int argc, char** argv) {
     imshow("LSDA Detection Results", img_show);
     waitKey(40);
     finish = clock();
-    LOG(INFO) << "LSDA: show result: "
+    LOG(INFO) << "LSDA Main Thread show result: "
         << 1000 * (finish - start) / CLOCKS_PER_SEC << " ms";
     
     // Estimate FPS
