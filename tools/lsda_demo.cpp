@@ -14,6 +14,7 @@
 #include <ctime>
 #include <cfloat>
 #include <string>
+#include <algorithm>:
 
 using namespace caffe;
 using namespace cv;
@@ -413,6 +414,7 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       int x1 = static_cast<int>(boxes[box_id*4+1]);
       int y2 = static_cast<int>(boxes[box_id*4+2]);
       int x2 = static_cast<int>(boxes[box_id*4+3]);
+      y1 = max(y1, 8);
       int class_id = static_cast<int>(class_id_vec[box_id]);
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec[class_id].c_str(), score);
