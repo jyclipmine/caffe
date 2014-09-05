@@ -33,7 +33,7 @@ void load_channel_mean(float channel_mean[], const char* filename);
 void load_class_name(vector<string>& class_name_vec, const char* filename);
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
-    vector<string>& class_name_vec);
+    vector<string>& class_name_vec, bool appeared_before[]);
     
 struct PrefetchParameterSet {
   CvCapture* pCapture;
@@ -163,6 +163,7 @@ int main(int argc, char** argv) {
   const float* class_id_vec = result_vecs + max_proposal_num;
   const float* score_vec = result_vecs + max_proposal_num * 2;
   Mat img_fetch, img_show;
+  bool appeared_before[class_num] = {};
   
   // Set prefetch_param
   PrefetchParameterSet prefetch_param;
@@ -267,7 +268,7 @@ int main(int argc, char** argv) {
     start = clock();
     // draw results
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes_show,
-        max_proposal_num, class_name_vec);
+        max_proposal_num, class_name_vec, appeared_before);
     imshow("LSDA Detection Results", img_show);
     waitKey(40);
     finish = clock();
@@ -399,7 +400,7 @@ void load_class_name(vector<string>& class_name_vec, const char* filename) {
 
 void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[], 
     const float score_vec[], float boxes[], int max_proposal_num,
-    vector<string>& class_name_vec) {
+    vector<string>& class_name_vec, bool appeared_before[]) {
   const static CvScalar blu = cvScalar(255, 0, 0);
   const static CvScalar red = cvScalar(0, 0, 255);
   CvFont font;
@@ -416,6 +417,8 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
       int x2 = static_cast<int>(boxes[box_id*4+3]);
       y1 = max(y1, 15);
       int class_id = static_cast<int>(class_id_vec[box_id]);
+      if (!appeared_before[class_id])
+        continue;
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
@@ -430,6 +433,12 @@ void draw_results(Mat& img, const float keep_vec[], const float class_id_vec[],
           << y1 << "," << x2 << "," << y2 << "), No. " << (class_id + 1) << ": "
           << label;
       obj_num++;
+    }
+  }
+  for (int box_id = 0; box_id < max_proposal_num; box_id++) {
+    if (keep_vec[box_id]) {
+      int class_id = static_cast<int>(class_id_vec[box_id]);
+      appeared_before[class_id] = true;
     }
   }
   LOG(INFO) << "Found " << obj_num << " objects";
