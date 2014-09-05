@@ -14,7 +14,7 @@
 #include <ctime>
 #include <cfloat>
 #include <string>
-#include <algorithm>:
+#include <algorithm>
 
 using namespace caffe;
 using namespace cv;
