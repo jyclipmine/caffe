@@ -269,7 +269,6 @@ int main(int argc, char** argv) {
     // draw results
     draw_results(img_show, keep_vec, class_id_vec, score_vec, boxes_show,
         max_proposal_num, class_name_vec, appeared_before);
-    imshow("output.jpg", img_show);
     imwrite("output.jpg", img_show);
     waitKey(40);
     finish = clock();
