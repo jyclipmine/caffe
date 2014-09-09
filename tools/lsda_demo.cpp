@@ -109,6 +109,7 @@ int main(int argc, char** argv) {
   // general parameters
   int camera_id = atoi(argv[7]);
   CvCapture* pCapture = cvCreateCameraCapture(camera_id);
+  CHECK(pCapture) << "Cannot setup camera at id " << camera_id;
   const int max_proposal_num = 1000;
   const int class_num = 7604;
   const int scale_num = atoi(argv[5]);

@@ -107,9 +107,9 @@ int main(int argc, char** argv) {
       << " [camera id]";
   
   // general parameters
-  int camera_id = atoi(argv[7]);
+  // int camera_id = atoi(argv[7]);
   // CvCapture* pCapture = cvCreateCameraCapture(camera_id);
-  CvCapture* pCapture = cvCaptureFromFile("eccv2.mp4");
+  CvCapture* pCapture = cvCaptureFromFile("input.mp4");
   const int max_proposal_num = 1000;
   const int class_num = 7604;
   const int scale_num = atoi(argv[5]);
@@ -123,14 +123,14 @@ int main(int argc, char** argv) {
   // 5-scale parameters
   const int input_h_5_scale = 1200;
   const int input_w_5_scale = 1600;
-  const int resized_w_arr_5_scale[] = { 480,  576,  688,  864,  1200};
   const int resized_h_arr_5_scale[] = { 640,  768,  917,  1152, 1600};
+  const int resized_w_arr_5_scale[] = { 480,  576,  688,  864,  1200};
   // 1-scale parameters
   const int input_h_1_scale = 688;
   const int input_w_1_scale = 917;
-  const int resized_w_arr_1_scale[] = { 688};
   const int resized_h_arr_1_scale[] = { 917};
-  
+  const int resized_w_arr_1_scale[] = { 688};
+
   // match_scale
   switch (scale_num) {
     case 5:
@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
         max_proposal_num, class_name_vec, appeared_before);
     
     char filename[100];
-    sprintf(filename, "eccv_%d.png", j);
+    sprintf(filename, "detection_frames/%d.png", j);
     imwrite(filename, img_show);
     imshow("LSDA Detection Results", img_show);
     waitKey(40);
