@@ -130,6 +130,10 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
   fin_cname.close();
 }
 
+void LSDA::run_on_image(const string& impath, const string& outpath) {
+  
+}
+
 int main(int argc, char* argv[]) {
   // Print output to stderr (while still logging).
   FLAGS_alsologtostderr = 1;
