@@ -53,7 +53,7 @@ private:
   
   // Caffe Network
   shared_ptr<Net<float> > net_;
-  Blob<float> bottom_data_
+  Blob<float> bottom_data_;
   Blob<float> bottom_boxes_;
   Blob<float> bottom_conv5_windows_;
   Blob<float> bottom_conv5_scales_;
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   // Print output to stderr (while still logging).
   FLAGS_alsologtostderr = 1;
   // parse input command
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   
   // initialize LSDA
   LSDA lsda(FLAGS_model, FLAGS_weights, FLAGS_gpu, FLAGS_channelmean,
