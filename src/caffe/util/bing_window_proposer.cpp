@@ -4,7 +4,7 @@
 #include "CmShow.h"
 #include <algorithm>
 #include "caffe/common.hpp"
-#include "caffe/util/window_proposer.hpp";
+#include "caffe/util/window_proposer.hpp"
 
 namespace caffe {
 
