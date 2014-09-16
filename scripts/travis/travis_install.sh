@@ -5,7 +5,10 @@ set -e
 
 MAKE="make --jobs=$NUM_THREADS"
 
-# Install apt packages where the Ubuntu 12.04 default works for Caffe
+# Install apt packages where the Ubuntu 12.04 default and ppa works for Caffe
+
+# This ppa is for gflags and glog
+add-apt-repository -y ppa:tuleu/precise-backports
 apt-get -y update
 apt-get install \
     wget git curl \
@@ -14,7 +17,7 @@ apt-get install \
     libboost-dev libboost-system-dev libboost-python-dev libboost-thread-dev \
     libprotobuf-dev protobuf-compiler \
     libatlas-dev libatlas-base-dev \
-    libhdf5-serial-dev \
+    libhdf5-serial-dev libgflags-dev libgoogle-glog-dev \
     bc
 
 # Add a special apt-repository to install CMake 2.8.9 for CMake Caffe build,
@@ -26,38 +29,9 @@ if $WITH_CMAKE; then
   apt-get -y install cmake
 fi
 
-# Install glog
-GLOG_URL=https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
-GLOG_FILE=/tmp/glog-0.3.3.tar.gz
-pushd .
-wget $GLOG_URL -O $GLOG_FILE
-tar -C /tmp -xzvf $GLOG_FILE
-rm $GLOG_FILE
-cd /tmp/glog-0.3.3
-./configure
-$MAKE
-$MAKE install
-popd
-
-# Install gflags
-GFLAGS_URL=https://github.com/schuhschuh/gflags/archive/master.zip
-GFLAGS_FILE=/tmp/gflags-master.zip
-pushd .
-wget $GFLAGS_URL -O $GFLAGS_FILE
-cd /tmp/
-unzip gflags-master.zip
-cd gflags-master
-mkdir build
-cd build
-export CXXFLAGS="-fPIC"
-cmake ..
-$MAKE VERBOSE=1
-$MAKE install
-popd
-
 # Install CUDA, if needed
 if $WITH_CUDA; then
-  CUDA_URL=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_6.0-37_amd64.deb
+  CUDA_URL=http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1204/x86_64/cuda-repo-ubuntu1204_6.5-14_amd64.deb
   CUDA_FILE=/tmp/cuda_install.deb
   curl $CUDA_URL -o $CUDA_FILE
   dpkg -i $CUDA_FILE
@@ -65,11 +39,11 @@ if $WITH_CUDA; then
   apt-get -y update
   # Install the minimal CUDA subpackages required to test Caffe build.
   # For a full CUDA installation, add 'cuda' to the list of packages.
-  apt-get -y install cuda-core-6-0 cuda-extra-libs-6-0
+  apt-get -y install cuda-core-6-5 cuda-cublas-6-5 cuda-cublas-dev-6-5 cuda-cudart-6-5 cuda-cudart-dev-6-5 cuda-curand-6-5 cuda-curand-dev-6-5
   # Create CUDA symlink at /usr/local/cuda
   # (This would normally be created by the CUDA installer, but we create it
   # manually since we did a partial installation.)
-  ln -s /usr/local/cuda-6.0 /usr/local/cuda
+  ln -s /usr/local/cuda-6.5 /usr/local/cuda
 fi
 
 # Install LMDB
