@@ -164,7 +164,7 @@ ifneq ($(CPU_ONLY), 1)
 endif
 # GOP
 # Add GOP Libraries
-LIBRARY_DIRS += lib/gop
+LIBRARY_DIRS += lib/gop_lib
 LIBRARIES += \
 	glog gflags pthread protobuf leveldb snappy \
 	lmdb \
