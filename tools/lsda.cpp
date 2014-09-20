@@ -160,7 +160,7 @@ void LSDA::run_on_image(const string& impath, const string& outpath) {
   forward_net();
   draw_result(im, out);
   imwrite(outpath, out);
-  LOG(INFO) << "detection results written to " << impath;
+  LOG(INFO) << "detection results written to " << outpath;
 }
 
 void LSDA::prepare_input(const Mat& im) {
@@ -288,13 +288,13 @@ void LSDA::draw_result(const Mat& im, Mat& out) {
   const float* class_id_vec = keep_vec + max_proposal_num_;
   const float* score_vec = keep_vec + max_proposal_num_ * 2;
   const float* boxes = bottom_boxes_.cpu_data();
-  const static CvScalar blu = cvScalar(255, 0, 0);
+  const static CvScalar blue = cvScalar(255, 0, 0);
   const static CvScalar red = cvScalar(0, 0, 255);
+  const static CvScalar white = cvScalar(255, 255, 255);
   CvFont font;
   cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1, CV_AA);
   char label[200];
   const int strong_cls_num = 200;
-  const int line_width = 3;
   im.copyTo(out);
   for (int box_id = 0; box_id < max_proposal_num_; box_id++) {
     if (keep_vec[box_id]) {
@@ -307,10 +307,14 @@ void LSDA::draw_result(const Mat& im, Mat& out) {
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec_[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
-      line(out, ul, ur, (class_id < strong_cls_num ? blu : red), line_width);
-      line(out, ur, lr, (class_id < strong_cls_num ? blu : red), line_width);
-      line(out, lr, ll, (class_id < strong_cls_num ? blu : red), line_width);
-      line(out, ll, ul, (class_id < strong_cls_num ? blu : red), line_width);
+      line(out, ul, ur, (class_id < strong_cls_num ? blue : red), 3);
+      line(out, ur, lr, (class_id < strong_cls_num ? blue : red), 3);
+      line(out, lr, ll, (class_id < strong_cls_num ? blue : red), 3);
+      line(out, ll, ul, (class_id < strong_cls_num ? blue : red), 3);
+      line(out, ul, ur, white, 1);
+      line(out, ur, lr, white, 1);
+      line(out, lr, ll, white, 1);
+      line(out, ll, ul, white, 1);
       IplImage iplimage = out;
       cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
           (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
