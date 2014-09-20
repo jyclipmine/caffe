@@ -131,7 +131,9 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
 }
 
 void LSDA::run_on_image(const string& impath, const string& outpath) {
-  
+  Mat im = imread(impath);
+  Mat out = im;
+  imwrite(outpath, out);
 }
 
 int main(int argc, char* argv[]) {
