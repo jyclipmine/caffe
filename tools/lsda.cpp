@@ -76,14 +76,7 @@ private:
 
 LSDA::LSDA(const string& model, const string& weights, const int gpu,
     const string& channelmean_path, const string& classname_path,
-    const int scale) {
-  // Set up Caffe Network
-  Caffe::set_phase(Caffe::TEST);
-  Caffe::set_mode(Caffe::GPU);
-  Caffe::SetDevice(gpu);
-  net_.reset(new Net<float>(model.c_str()));
-  net_->CopyTrainedLayersFrom(weights.c_str());
-  
+    const int scale) {  
   // Set up Scale Parameters
   switch (scale) {
   case 5:
@@ -103,11 +96,19 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
   }
   scale_num_ = scale;
   input_size_ = fixed_sizes_vec_.back();
-  
+
   // Set up Window Proposal Method
   window_proposer_.reset(new GOPWindowProposer());
   max_proposal_num_ = 1000;
-  
+
+  // Set up blob size
+  bottom_data_.Reshape(scale_num_, 3, input_size_, input_size_);
+  bottom_boxes_.Reshape(1, 1, max_proposal_num_, 4);
+  bottom_conv5_windows_.Reshape(1, 1, max_proposal_num_, 4);
+  bottom_conv5_scales_.Reshape(1, 1, 1, max_proposal_num_);
+  bottom_valid_vec_.Reshape(1, 1, 1, max_proposal_num_);
+  top_result_.Reshape(1, 1, 1, 3*max_proposal_num_);
+
   // Load channel mean
   const int channels = 3;
   ifstream fin_cmean(channelmean_path.c_str(), ios::binary);
@@ -124,16 +125,38 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
   CHECK(fin_cname) << "cannot open class name file";
   for (int i = 0; i < class_num; i++) {
     getline(fin_cname, class_name_vec_[i]);
-    LOG(INFO) << "loading class No. " << (i+1) << ": " << class_name_vec_[i];
+    LOG(INFO) << "class No. " << (i+1) << ": " << class_name_vec_[i];
   }
   CHECK(fin_cname) << "error reading class name file";
   fin_cname.close();
+
+  // Set up Caffe Network
+  Caffe::set_phase(Caffe::TEST);
+  Caffe::set_mode(Caffe::GPU);
+  Caffe::SetDevice(gpu);
+  net_.reset(new Net<float>(model.c_str()));
+  net_->CopyTrainedLayersFrom(weights.c_str());
 }
 
 void LSDA::run_on_image(const string& impath, const string& outpath) {
   Mat im = imread(impath);
+  LOG(INFO) << "detecting image " << impath;
+
+  clock_t start_c, finish_c;
+
+  // run Geodesic Object Proposal on input image to get bounding boxes
+  start_c = clock() * 1000 / CLOCKS_PER_SEC;
+  float* boxes = bottom_boxes_.mutable_cpu_data();
+  int proposal_num = window_proposer_.propose(im, boxes, max_proposal_num_);
+  finish_c = clock() * 1000 / CLOCKS_PER_SEC;
+  LOG(INFO) << "run Geodesic Object Proposal: " << finish - start << " ms";
+
+  
+
+  // write result image to disk
   Mat out = im;
   imwrite(outpath, out);
+  LOG(INFO) << "detection results written to " << impath;
 }
 
 int main(int argc, char* argv[]) {
