@@ -1,8 +1,13 @@
+set(CMAKE_CXX_COMPILER g++-4.8)
+# Using g++ 4.8 compiler. If you change the compiler above line, you should also
+# change the first line in 
+# ../../Makefile
+# to use the same compiler to compile caffe
+###############################################################################
 cmake_minimum_required(VERSION 2.8.9)
 project( pseg )
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 
-set(CMAKE_CXX_COMPILER g++-4.8)
 # Checking for OpenMP
 find_package( OpenMP )
 if(OPENMP_FOUND)

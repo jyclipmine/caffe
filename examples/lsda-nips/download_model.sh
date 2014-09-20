@@ -1,1 +1,1 @@
-wget -P data/ 
+wget -P data/ http://www.eecs.berkeley.edu/~jhoffman/caffe_nets/lsda_net.caffemodel
