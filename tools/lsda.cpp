@@ -154,8 +154,9 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
 
 void LSDA::run_on_image(const string& impath, const string& outpath) {
   Mat im, out;
-  LOG(INFO) << "detecting image " << impath;
   im = imread(impath);
+  CHECK(!im.empty()) << "failed to read image " << impath;
+  LOG(INFO) << "detecting image " << impath;
   prepare_input(im);
   forward_net();
   draw_result(im, out);
@@ -292,7 +293,7 @@ void LSDA::draw_result(const Mat& im, Mat& out) {
   const static CvScalar red = cvScalar(0, 0, 255);
   const static CvScalar white = cvScalar(255, 255, 255);
   CvFont font;
-  cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1, CV_AA);
+  cvInitFont(&font, CV_FONT_HERSHEY_PLAIN, 1, 1, 0, 1.5, CV_AA);
   char label[200];
   const int strong_cls_num = 200;
   im.copyTo(out);
@@ -315,12 +316,13 @@ void LSDA::draw_result(const Mat& im, Mat& out) {
       line(out, ur, lr, white, 1);
       line(out, lr, ll, white, 1);
       line(out, ll, ul, white, 1);
-      IplImage iplimage = out;
-      cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
-          (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
+      putText(out, label, Point(x1, y1 - 3), CV_FONT_NORMAL, 0.5,
+        (class_id < strong_cls_num ? blue : red), 3, 1);
+      putText(out, label, Point(x1, y1 - 3), CV_FONT_NORMAL, 0.5,                
+        white, 1, 1);
       LOG(INFO) << "box id " << box_id << ", (x1,y1,x2,y2) = (" << x1 << ","
-          << y1 << "," << x2 << "," << y2 << "), class No. " << (class_id + 1) << ": "
-          << label;
+          << y1 << "," << x2 << "," << y2 << "), class No. " << (class_id + 1)
+          << ": " << label;
     }
   }
 }
