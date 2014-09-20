@@ -148,7 +148,7 @@ LSDA::LSDA(const string& model, const string& weights, const int gpu,
       << "input boxes mismatch";
   CHECK_EQ(input_blobs[4]->count(), bottom_valid_vec_.count())
       << "input valid_vec mismatch";
-  CHECK_EQ(output_blobs[0]->count(), top_result_.count())
+  CHECK_EQ(output_blobs[0]->count(), top_result_vecs_.count())
       << "output size mismatch";
 }
 
@@ -248,7 +248,7 @@ void LSDA::prepare_input(const Mat& im) {
         for (int w = 0; w < resized_w; ++w) {
           float pixel = static_cast<float>(resized_im.at<cv::Vec3b>(h, w)[c]);
           int index = (input_offset * scale)
-              + (w + input_w * (h + input_h * c));
+              + (w + input_size_ * (h + input_size_ * c));
           imagedata[index] = pixel - channel_mean_[c];
         }
       }
@@ -278,13 +278,13 @@ void LSDA::forward_net() {
   net_->ForwardPrefilled();
   // retrieve data
   caffe_copy(output_blobs[0]->count(), output_blobs[0]->cpu_data(),
-    top_result_vecs_);
+    top_result_vecs_.mutable_cpu_data());
   t_finish = clock() * 1000 / CLOCKS_PER_SEC;
   LOG(INFO) << "network forward: " << t_finish - t_start << " ms";
 }
 
 void LSDA::draw_result(const Mat& im, Mat& out) {
-  const float* keep_vec = top_result_vecs_.cpu_data;
+  const float* keep_vec = top_result_vecs_.cpu_data();
   const float* class_id_vec = keep_vec + max_proposal_num_;
   const float* score_vec = keep_vec + max_proposal_num_ * 2;
   const float* boxes = bottom_boxes_.cpu_data();
@@ -307,10 +307,10 @@ void LSDA::draw_result(const Mat& im, Mat& out) {
       float score = score_vec[box_id];
       sprintf(label, "%s: %.3f", class_name_vec_[class_id].c_str(), score);
       Point ul(x1, y1), ur(x2, y1), ll(x1, y2), lr(x2, y2);
-      line(img, ul, ur, (class_id < strong_cls_num ? blu : red), line_width);
-      line(img, ur, lr, (class_id < strong_cls_num ? blu : red), line_width);
-      line(img, lr, ll, (class_id < strong_cls_num ? blu : red), line_width);
-      line(img, ll, ul, (class_id < strong_cls_num ? blu : red), line_width);
+      line(out, ul, ur, (class_id < strong_cls_num ? blu : red), line_width);
+      line(out, ur, lr, (class_id < strong_cls_num ? blu : red), line_width);
+      line(out, lr, ll, (class_id < strong_cls_num ? blu : red), line_width);
+      line(out, ll, ul, (class_id < strong_cls_num ? blu : red), line_width);
       IplImage iplimage = out;
       cvPutText(&iplimage, label, cvPoint(x1, y1 - 3), &font,
           (class_id < strong_cls_num ? CV_RGB(0, 0, 255) : CV_RGB(255, 0, 0)));
