@@ -147,7 +147,7 @@ void LSDA::run_on_image(const string& impath, const string& outpath) {
   // run Geodesic Object Proposal on input image to get bounding boxes
   t_start = clock() * 1000 / CLOCKS_PER_SEC;
   float* boxes = bottom_boxes_.mutable_cpu_data();
-  int proposal_num = window_proposer_.propose(im, boxes, max_proposal_num_);
+  int proposal_num = window_proposer_->propose(im, boxes, max_proposal_num_);
   t_finish = clock() * 1000 / CLOCKS_PER_SEC;
   LOG(INFO) << "run Geodesic Object Proposal: " << t_finish - t_start << " ms";
 
