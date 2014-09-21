@@ -6,7 +6,7 @@ This git repository contains the fast LSDA implemenation using [Geodesic Object 
 
 ## Caffe LSDA Release Installation Guide
 
-Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can run `export CAFFE_ROOT=$(pwd)`)
+Let's call the path to caffe-lsda-nips `$CAFFE_ROOT` (you can run `export CAFFE_ROOT=$(pwd)`)
 
 0. Download and build Geodesic Object Proposal (GOP) libraries
   0. Make sure you have installed all GOP prerequisites:
@@ -24,7 +24,7 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
     `./download_gop.sh`   
     `./build_gop_libraries.sh`    
 0. Build Caffe LSDA Release     
-  Please Follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html).    
+  Please follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html).    
   Also, make sure that your CUDA version supports g++-4.8 (or the compiler you are using to compile GOP, see Note 1). It is highly recommended to complie caffe with latest CUDA 6.5.
 
 0. Try out LSDA example
