@@ -40,6 +40,6 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
 
 Note 1: To link the GOP libraries and caffe libraries together, they must be compiled using the same C++ compiler with C++11 support. If you want to use a compiler other than g++-4.8, you must modify the first line in `$CAFFE_ROOT/Makefile` and `$CAFFE_ROOT/lib/gop_wrapper/CMakeLists.txt` to using your compiler. Also make sure that CUDA nvcc supports your compiler.   
 Note 2: If the script to install GOP dependencies does not work on early Ubuntu version (e.g. 12.04 LTS), you may add the Ubuntu 14.04 package source to your `/etc/apt/sources.list`. For example, if you want to use the UC Davis source, you can run:   
-0. `sudo echo "deb http://mirror.math.ucdavis.edu/ubuntu/ trusty main restricted" >> /etc/apt/sources.list`    
-0. `sudo apt-get update`    
+`sudo echo "deb http://mirror.math.ucdavis.edu/ubuntu/ trusty main restricted" >> /etc/apt/sources.list`    
+`sudo apt-get update`    
 Or, you can install the GOP dependencies manually.
