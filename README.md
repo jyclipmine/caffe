@@ -42,4 +42,4 @@ This git repository contains the fast LSDA implemenation using [Geodesic Object 
 
 Note 1: To link the GOP libraries and caffe libraries together, they must be compiled using the same C++ compiler with C++11 support. If you want to use a compiler other than g++-4.8, you must modify the first line in `$CAFFE_ROOT/Makefile` and the first line in `$CAFFE_ROOT/lib/gop_wrapper/CMakeLists.txt`. Also make sure that CUDA nvcc supports your compiler.   
 Note 2: If the script to install GOP dependencies does not work on early Ubuntu version (e.g. 12.04 LTS), you may add the Ubuntu 14.04 package source to your software source list. For example, if you want to use the UC Davis source, add `deb http://mirror.math.ucdavis.edu/ubuntu/ trusty main` to your `/etc/apt/sources.list`, and run `sudo apt-get update`.    
-Or, you can install the GOP dependencies manually.
+Or, you can install the GOP dependencies (especially g++-4.8 and Eigen3) manually.
