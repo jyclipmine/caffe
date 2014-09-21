@@ -4,5 +4,5 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 
 mkdir ../../gop_lib/
-cp examples/*.a ../../gop_lib/
-cp lib/*/*.a ../../gop_lib/
+find . -name "*.a" -exec cp {} ../../gop_lib/ \;
+cd ../..
