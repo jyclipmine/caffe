@@ -1,4 +1,10 @@
-# Caffe LSDA Release Installation Guide
+# LSDA
+
+[LSDA](http://lsda.berkeleyvision.org/) is a framework for large scale detection through adaptation. We combine adaptation techniques with deep convolutional models to create a fast and effective large scale detection network.
+
+This git repository contains the fast LSDA implemenation using [Geodesic Object Proposal (GOP)](http://www.philkr.net/home/gop) and [Spatial Pyramid Pooling (SPP)](http://research.microsoft.com/en-us/um/people/kahe/eccv14sppnet/index.html).
+
+## Caffe LSDA Release Installation Guide
 
 Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can run `export CAFFE_ROOT=$(pwd)`)
 
@@ -12,9 +18,9 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
     on Ubuntu, you can install them using apt-get:    
           `sudo apt-get install cmake g++-4.8 libeigen3-dev libpng-dev libjpeg-dev`
   0. Run the following commands to download and build Geodesic Object Proposal (GOP) libraries 
-    `cd $CAFFE_ROOT/lib`
-    `./download_gop.sh`
-    `./build_gop_libraries.sh`
+    `cd $CAFFE_ROOT/lib`    
+    `./download_gop.sh`   
+    `./build_gop_libraries.sh`    
 0. Build Caffe LSDA Release
   Please Follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html).    
   Also, make sure that your CUDA version supports g++-4.8 (or the compile you are using to compile gop). It is highly recommended to complie caffe with latest CUDA 6.5.
