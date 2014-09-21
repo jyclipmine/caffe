@@ -29,9 +29,9 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
   0. Download the lsda caffe model:    
     `cd $CAFFE_ROOT/examples/lsda-nips`   
     `./download_model.sh`
-  1. Try out the detection example  
-    1-scale Spatial Pyramid Pooling (fast detection):   
+  0. Try out the detection example  
+    * 1-scale Spatial Pyramid Pooling (fast detection):   
     `./lsda_1_scale.sh`   
-    5-scale Spatial Pyramid Pooling (slower than 1-scale but more accurate):    
+    * 5-scale Spatial Pyramid Pooling (slower than 1-scale but more accurate):    
     `./lsda_5_scale.sh`   
     If you want to run on your own image, you can simply modify `lsda_1_scale.sh` or `lsda_5_scale.sh` and replace `-impath input.jpg` with path to your own image.
