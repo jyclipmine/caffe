@@ -7,8 +7,8 @@ This git repository contains the fast LSDA implemenation using [Geodesic Object 
 ## Caffe LSDA Release Installation Guide
 
 0. Download Caffe LSDA Release (this repo):    
-  `wget https://github.com/ronghanghu/caffe/archive/lsda-nips.zip`    
-  `unzip lsda-nips.zip`
+  `wget https://codeload.github.com/ronghanghu/caffe/zip/lsda-nips`    
+  `unzip lsda-nips.zip`   
   Let's call the path to caffe-lsda-nips `$CAFFE_ROOT` (you can run `export CAFFE_ROOT=$(pwd)/caffe-lsda-nips`)
 0. Download and build Geodesic Object Proposal (GOP) libraries
   0. Make sure you have installed all GOP prerequisites:
