@@ -25,7 +25,7 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
     `./build_gop_libraries.sh`    
 0. Build Caffe LSDA Release     
   Please Follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html).    
-  Also, make sure that your CUDA version supports g++-4.8 (or the compile you are using to compile GOP, see Note 1). It is highly recommended to complie caffe with latest CUDA 6.5.
+  Also, make sure that your CUDA version supports g++-4.8 (or the compiler you are using to compile GOP, see Note 1). It is highly recommended to complie caffe with latest CUDA 6.5.
 
 0. Try out LSDA example
   0. Download the lsda caffe model:    
