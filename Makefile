@@ -1,4 +1,4 @@
-CUSTOM_CXX := g++-4.8
+CMAKE_CXX_COMPILER := g++-4.8
 # Using g++ 4.8 compiler. If you change the compiler above line, you should also
 # change the first line in 
 # lib/gop_wrapper/CMakeLists.txt
@@ -11,6 +11,7 @@ PROJECT := caffe
 
 CONFIG_FILE := Makefile.config
 include $(CONFIG_FILE)
+CUSTOM_CXX := $(CMAKE_CXX_COMPILER)
 
 BUILD_DIR_LINK := $(BUILD_DIR)
 RELEASE_BUILD_DIR := .$(BUILD_DIR)_release
