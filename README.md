@@ -6,7 +6,7 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
   0. Make sure you have installed all GOP Prerequisites:
     * cmake
     * g++-4.8 (or other compliers supporting C++11)
-    * Eigen3
+    * [Eigen3](http://eigen.tuxfamily.org/)
     * libpng
     * libjpeg   
     on Ubuntu, you can install them using apt-get:    
@@ -16,7 +16,7 @@ Let's call the place where you installed caffe-lsda-nips `$CAFFE_ROOT` (you can 
     `./download_gop.sh`
     `./build_gop_libraries.sh`
 0. Build Caffe LSDA Release
-  Please Follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html)
+  Please Follow the [Caffe installation instructions](http://caffe.berkeleyvision.org/installation.html).    
   Also, make sure that your CUDA version supports g++-4.8 (or the compile you are using to compile gop). It is highly recommended to complie caffe with latest CUDA 6.5.
 
 0. Try out LSDA example
