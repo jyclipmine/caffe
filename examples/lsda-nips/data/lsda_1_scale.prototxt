@@ -310,7 +310,7 @@ layers {
   bottom: "valid_vec"
   top: "result_vecs"
   nms_param {
-    score_th: 1
+    score_th: 0.5
     nms_th_1: 0.3
     nms_th_2: 0.3
     disp_num: 100
