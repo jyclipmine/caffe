@@ -38,6 +38,8 @@ This git repository contains the fast LSDA implemenation using [Geodesic Object 
     `./lsda_5_scale.sh`   
     * 1-scale Spatial Pyramid Pooling (faster than 5-scale but less accurate):   
     `./lsda_1_scale.sh`   
+    * You may also want to try out the 1-scale webcam demo if there is a webcam on your machine:
+    `./lsda_webcam.sh`   
     If you want to run on your own image, you can simply modify `lsda_5_scale.sh` or `lsda_1_scale.sh` and replace `-impath input.jpg` with path to your own image.
 
 Note 1: To link the GOP libraries and caffe libraries together, they must be compiled using the same C++ compiler with C++11 support. If you want to use a compiler other than g++-4.8, you must modify the first line in `$CAFFE_ROOT/Makefile` before you compile caffe and the first line in `$CAFFE_ROOT/lib/gop_wrapper/CMakeLists.txt` before you compile GOP. Also make sure that CUDA nvcc supports your compiler.   
